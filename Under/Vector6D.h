@@ -7,6 +7,12 @@ public:
 		m_data1 = a;
 		m_data2 = b;
 	}
+	CVector6D(double a, double b, double c, double d, double e, double f){
+		CVector3D temp1 = (a, b, c);
+		CVector3D temp2 = (d, e, f);
+		m_data1 = temp1;
+		m_data2 = temp2;
+	}
 
 	double operator [](int idx)
 	{

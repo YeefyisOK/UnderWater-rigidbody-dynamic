@@ -39,10 +39,7 @@
     <ClCompile Include="Point3D.cpp">
       <Filter>datastructure</Filter>
     </ClCompile>
-    <ClCompile Include="KirchhoffF.cpp">
-      <Filter>dynamics</Filter>
-    </ClCompile>
-    <ClCompile Include="KirchhoffB.cpp">
+    <ClCompile Include="Kirchhoff.cpp">
       <Filter>dynamics</Filter>
     </ClCompile>
   </ItemGroup>
@@ -65,13 +62,10 @@
     <ClInclude Include="Vector6D.h">
       <Filter>datastructure</Filter>
     </ClInclude>
-    <ClInclude Include="KirchhoffF.h">
-      <Filter>dynamics</Filter>
-    </ClInclude>
     <ClInclude Include="main_display.h">
       <Filter>drawing</Filter>
     </ClInclude>
-    <ClInclude Include="KirchhoffB.h">
+    <ClInclude Include="Kirchhoff.h">
       <Filter>dynamics</Filter>
     </ClInclude>
   </ItemGroup>

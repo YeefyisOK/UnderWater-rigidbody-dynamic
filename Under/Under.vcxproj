@@ -81,16 +81,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Kirchhoff3D.cpp" />
-    <ClCompile Include="KirchhoffB.cpp" />
-    <ClCompile Include="KirchhoffF.cpp" />
+    <ClCompile Include="Kirchhoff.cpp" />
     <ClCompile Include="Matrix.cpp" />
     <ClCompile Include="Point3D.cpp" />
     <ClCompile Include="main_display.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Kirchhoff3D.h" />
-    <ClInclude Include="KirchhoffB.h" />
-    <ClInclude Include="KirchhoffF.h" />
+    <ClInclude Include="Kirchhoff.h" />
     <ClInclude Include="main_display.h" />
     <ClInclude Include="Matrix.h" />
     <ClInclude Include="PIC.h" />

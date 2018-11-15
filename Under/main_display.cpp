@@ -6,6 +6,7 @@
 #include<gl/glu.h>
 #include<stdio.h>
 #include"main_display.h"
+#include"Kirchhoff.h"
 #include "PIC.h"
 #include <fstream>
 using namespace std;
@@ -38,6 +39,8 @@ CVector3D v_f(f);
 
 CVector3D v_rand(one);//单位阵 随便设一个
 //基尔霍夫张量
+CKirchhoff m_K(m_pic);
+m_K.compute();
 CVector6D K(v_t, v_rand);//随便设一个
 
 //中间量
