@@ -188,10 +188,10 @@ MatrixXd CKirchhoff::area_vector(){
 	return AV;
 }
 MatrixXd CKirchhoff::solid_angle(MatrixXd src){//numPoints*3
-	MatrixXd res(numFaces, numPoints);
+	MatrixXd res(numFaces, numFaces);
 //	MatrixXd FacePoint(numFaces, 3);
 	for (int i = 0; i < numFaces; i++){
-		for (int j = 0; j < numPoints; j++){
+		for (int j = 0; j < numFaces; j++){
 			Vector3d R1 = face[0].row(i) - src.row(j);
 			Vector3d R2 = face[1].row(i) - src.row(j);
 			Vector3d R3 = face[2].row(i) - src.row(j);//向量还是矩阵可以dot
@@ -205,7 +205,6 @@ MatrixXd CKirchhoff::solid_angle(MatrixXd src){//numPoints*3
 			double l3 = sqrt(R3.dot(R3));
 			double Den = l1*l2*l3 + l1*R2.dot(R3) + l2*R3.dot(R1) + l3*R1.dot(R2);
 			res(i, j) = 2 * atan(N / Den);
-
 		}
 	}
 	return res;
