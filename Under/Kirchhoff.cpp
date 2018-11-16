@@ -5,41 +5,53 @@ CKirchhoff::CKirchhoff(PIC m_pic)
 {
 	numPoints = m_pic.V.size();
 	numFaces = m_pic.F.size();
-	for (int i = 0; i < numPoints; i++){
-		VectorXd temp(3);
-		temp(0) = m_pic.V[i].X;
-		temp(1) = m_pic.V[i].Y;
-		temp(2) = m_pic.V[i].Z;		
-		vertex.row(i) = temp;//赋值顶点矩阵
-	}
-	for (int i = 0; i < numPoints; i++){
-		VectorXd temp(3);
-		temp(0) = m_pic.VN[i].NX;
-		temp(1) = m_pic.VN[i].NY;
-		temp(2) = m_pic.VN[i].NZ;
-		normal.row(i) = temp;//赋值法向矩阵 vector赋值矩阵的一行
-	}
-	for (int k = 0; k < 3; k++){
-		for (int i = 0; i < numPoints; i++){
-			/*
-			vector <double>zuobiao;
-			zuobiao.push_back(m_pic.V[m_pic.F[i].V[k]].X);
-			zuobiao.push_back(m_pic.V[m_pic.F[i].V[k]].Y);
-			zuobiao.push_back(m_pic.V[m_pic.F[i].V[k]].Z);*/
+	vertex.resize(numPoints, 3);
+	normal.resize(numPoints, 3);
+	face[0].resize(numFaces, 3);
+	face[1].resize(numFaces, 3);
+	face[2].resize(numFaces, 3);
+	if (m_pic.V.size() > 0) {
+		for (int i = 0; i < numPoints; i++) {
 			VectorXd temp(3);
-			temp(0) = m_pic.V[m_pic.F[i].V[k]].X;
-			temp(1) = m_pic.V[m_pic.F[i].V[k]].Y;
-			temp(2) = m_pic.V[m_pic.F[i].V[k]].Z;
-			face[k].row(i) = temp;//赋值面矩阵 把索引改成顶点
+			temp(0) = m_pic.V[i].X;
+			temp(1) = m_pic.V[i].Y;
+			temp(2) = m_pic.V[i].Z;		
+			vertex.row(i) = temp;//赋值顶点矩阵
 		}
 	}
+	if (m_pic.VN.size() > 0) {
+		for (int i = 0; i < numPoints; i++){
+			VectorXd temp(3);
+			temp(0) = m_pic.VN[i].NX;
+			temp(1) = m_pic.VN[i].NY;
+			temp(2) = m_pic.VN[i].NZ;
+			normal.row(i) = temp;//赋值法向矩阵 vector赋值矩阵的一行
+		}
+	}
+	if (m_pic.F.size() > 0) {
+		for (int k = 0; k < 3; k++){
+			for (int i = 0; i < numPoints; i++){
+				/*
+				vector <double>zuobiao;
+				zuobiao.push_back(m_pic.V[m_pic.F[i].V[k]].X);
+				zuobiao.push_back(m_pic.V[m_pic.F[i].V[k]].Y);
+				zuobiao.push_back(m_pic.V[m_pic.F[i].V[k]].Z);*/
+				VectorXd temp(3);
+				temp(0) = m_pic.V[m_pic.F[i].V[k]].X;
+				temp(1) = m_pic.V[m_pic.F[i].V[k]].Y;
+				temp(2) = m_pic.V[m_pic.F[i].V[k]].Z;
+				face[k].row(i) = temp;//赋值面矩阵 把索引改成顶点
+			}
+		}
+	}
+
 }
 MatrixXd CKirchhoff::computeKF(double offset){
 	MatrixXd K(6, 6);
 	MatrixXd S = vertex - offset * normal;
 	MatrixXd M = solid_angle(S);
-	MatrixXd MF = motion_flux();
-	MatrixXd sigma = MF.ldlt().solve(M);//sigma=strength
+	MatrixXd FL = motion_flux();
+	VectorXd sigma = M.colPivHouseholderQr().solve(FL);//sigma=strength
 	//MatrixXd sigma = division(MF, M);
 	MatrixXd C = face_center();
 	MatrixXd SL = single_layer(S ,C);
@@ -132,31 +144,35 @@ MatrixXd CKirchhoff::angular_vector(){
 		pp31(i, 0) = face[2].row(i).dot(face[0].row(i));
 	}
 	//?
+	/*
 	MatrixXd p12(numFaces, 1);
 	MatrixXd p23(numFaces, 1);
-	MatrixXd p31(numFaces, 1);
-	p12 = pp1 + pp2 + pp12;
-	p23 = pp2 + pp3 + pp23;
-	p31 = pp3 + pp1 + pp31;
+	MatrixXd p31(numFaces, 1);*/
+	MatrixXd p12= pp1 + pp2 + pp12;
+	MatrixXd p23= pp2 + pp3 + pp23;
+	MatrixXd p31= pp3 + pp1 + pp31;
+
 	MatrixXd p2p1 = p2-p1;
 	MatrixXd p3p2 = p3 - p1;
 	MatrixXd p1p3 = p1 - p3;
-	MatrixXd t1(numFaces, 1);
-	MatrixXd t2(numFaces, 1);
-	MatrixXd t3(numFaces, 1);
-	t1.col(2) = p12*p2p1.col(2);
-	t2.col(2) = p23*p3p2.col(2);
-	t3.col(2) = p31*p1p3.col(2);
+	MatrixXd t1(numFaces, 3);
+	MatrixXd t2(numFaces, 3);
+	MatrixXd t3(numFaces, 3);
+	for (int i = 0;i < numFaces;i++) {
 
-	t1.col(0) = p12*p2p1.col(0);
-	t2.col(0) = p23*p3p2.col(0);
-	t3.col(0) = p31*p1p3.col(0);
+		t1(i, 2) = p12(i, 0)*p2p1.col(2)(i, 0);//abort!!!
+		t2(i, 2) = p23(i, 0)*p3p2.col(2)(i, 0);
+		t3(i, 2) = p31(i, 0)*p1p3.col(2)(i, 0);
 
-	t1.col(1) = p12*p2p1.col(1);
-	t2.col(1) = p23*p3p2.col(1);
-	t3.col(1) = p31*p1p3.col(1);
-	MatrixXd res;
-	res = -(t1 + t2 + t3) / 6;
+		t1(i, 0) = p12(i, 0)*p2p1.col(0)(i, 0);
+		t2(i, 0) = p23(i, 0)*p3p2.col(0)(i, 0);
+		t3(i, 0) = p31(i, 0)*p1p3.col(0)(i, 0);
+
+		t1(i, 1) = p12(i, 0)*p2p1.col(1)(i, 0);
+		t2(i, 1) = p23(i, 0)*p3p2.col(1)(i, 0);
+		t3(i, 1) = p31(i, 0)*p1p3.col(1)(i, 0);
+	}
+	MatrixXd res= -(t1 + t2 + t3) / 6;
 	return res;
 }
 MatrixXd CKirchhoff::area_vector(){
@@ -179,7 +195,7 @@ MatrixXd CKirchhoff::solid_angle(MatrixXd src){//numPoints*3
 			Vector3d R1 = face[0].row(i) - src.row(j);
 			Vector3d R2 = face[1].row(i) - src.row(j);
 			Vector3d R3 = face[2].row(i) - src.row(j);//向量还是矩阵可以dot
-			Matrix3d temp(3, 3);
+			Matrix3d temp;
 			temp.row(0) = R1;
 			temp.row(1) = R2;
 			temp.row(2) = R3;
@@ -207,7 +223,7 @@ void CKirchhoff::Subexpressions(double &w0, double &w1, double &w2, double &f1, 
 	g1 = f2 + w1*(f1 + w1);
 	g2 = f2 + w2*(f1 + w2);
 }
-MatrixXd CKirchhoff::computeKB(MatrixXd face[], int numFaces, int index[], double mass) {
+MatrixXd CKirchhoff::computeKB(double mass) {
 	CPoint3D cm(0, 0, 0);
 	MatrixXd inertia(6, 6);
 	const double mult[10] = { 1 / 6, 1 / 24, 1 / 24, 1 / 24, 1 / 60, 1 / 60, 1 / 60, 1 / 120, 1 / 120, 1 / 120 };
@@ -264,7 +280,8 @@ MatrixXd CKirchhoff::computeKB(MatrixXd face[], int numFaces, int index[], doubl
 	return inertia;
 }
 CVector6D CKirchhoff::computeK(){
-	MatrixXd KF, KB;
+	MatrixXd KF = computeKF(0.05);//offest
+	MatrixXd KB = computeKB(10);//mass
 	MatrixXd temp1 = KF.rowwise().sum();
 	MatrixXd temp2 = KB.rowwise().sum();
 	temp1 = temp1 + temp2;

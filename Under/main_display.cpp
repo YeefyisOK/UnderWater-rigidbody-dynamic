@@ -17,7 +17,7 @@ using namespace std;
 */
 
 //obj读取
-string name = "H:\\MeshData\\Eight.obj";
+string name = "H:\\MeshData\\cube.obj";
 PIC m_pic;
 
 CMatrix toDaOmega(CVector3D omega);
@@ -42,17 +42,20 @@ CVector3D v_t(t);
 CVector3D v_f(f);
 
 CVector3D v_rand(one);//单位阵 随便设一个
+CVector6D K(0,0,0,0,0,0);
+/*
 //基尔霍夫张量
 CKirchhoff m_K(m_pic);
-CVector6D K = m_K.computeK();//随便设一个
+CVector6D K = m_K.computeK();
+*/
 
 //中间量
-CMatrix m_R_ = m_R%m_DaOmega;
-CPoint3D p_y_ = p_y*v_velocity;
-CVector3D v_l = K.getData1() * v_omega;
-CVector3D v_p = K.getData2() * v_velocity;
-CVector3D v_l_ = v_l*v_omega += v_p*v_velocity += v_t;
-CVector3D v_p_ = v_p*v_omega += v_f;
+CMatrix m_R_ ;
+CPoint3D p_y_;
+CVector3D v_l ;
+CVector3D v_p;
+CVector3D v_l_ ;
+CVector3D v_p_ ;
 
 //偏移量 旋转量
 CVector3D temp_deltay(0,0,0);
@@ -173,6 +176,10 @@ CMatrix toDaOmega(CVector3D omega){//w->Ω
 	return res;
 }
 void init() {
+	ReadPIC();
+	//基尔霍夫张量
+	CKirchhoff m_K(m_pic);
+	K = m_K.computeK();
 	//glClearColor(0.0, 0.0, 0.0, 1.0);           //设置背景颜色  
 	glClearColor(0.75f, 0.75f, 0.75f, 0.0f);
 	//深度测试的相关设置 
@@ -262,8 +269,8 @@ void drawScene()           //绘制
 	glTranslated(temp_deltay[0], temp_deltay[1], temp_deltay[2]);
 	glRotated(q.get_w(), q.get_x(), q.get_y(), q.get_z());
 	glColor3f(0.0, 1.0, 0.0);     // Set current color to green 
-	//GLDraw();
-	DrawCylinder(0.5, 0.7, 32);
+	GLDraw();
+	//DrawCylinder(0.5, 0.7, 32);
 	//glutSolidCube(3);
 
 } //窗口大小发生变化时的响应函数 
@@ -352,7 +359,7 @@ int main(int argc, char* argv[]) {
 	glutReshapeFunc(reshape);              //设置窗口大小发生变化时的响应函数 
 
 	//定时器  每1000毫秒触发一次
-	//glutTimerFunc(1000, TimerFunction, 1);
+	glutTimerFunc(1000, TimerFunction, 1);
 
 	glutMainLoop();                   //消息循环：获取消息，分发消息，响应消息 
 	return 0;

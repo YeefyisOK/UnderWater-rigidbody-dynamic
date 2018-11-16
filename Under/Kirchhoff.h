@@ -3,8 +3,11 @@
 #include <vector>
 #include "Point3D.h"
 #include "Vector6D.h"
-#include <Eigen/Cholesky>
 #include <Eigen/Dense>
+#include <Eigen/Cholesky>  
+#include <Eigen/LU>  
+#include <Eigen/QR>  
+#include <Eigen/SVD>  
 #include <math.h>
 #include <vector>
 using namespace Eigen;
@@ -13,9 +16,9 @@ class CKirchhoff
 public:
 	int numPoints;
 	int numFaces;
-	MatrixXd vertex;
-	MatrixXd normal;
-	MatrixXd face[3];
+	MatrixXd vertex ;//= MatrixXd::Random(3, 3)
+	MatrixXd normal ;//= MatrixXd::Random(3, 3)
+	MatrixXd face[3] ;
 
 	CKirchhoff(PIC m_pic);
 	MatrixXd angular_vector();
@@ -32,7 +35,7 @@ public:
 	//º∆À„KB
 	void Subexpressions(double &w0, double &w1, double &w2,
 		double &f1, double &f2, double &f3, double &g0, double &g1, double &g2);
-	MatrixXd computeKB(MatrixXd face[], int numFaces, int index[], double mass);
+	MatrixXd computeKB(double mass);
 
 	CVector6D computeK();//º∆À„K=KF+KB
 };
