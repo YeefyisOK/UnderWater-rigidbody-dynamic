@@ -6,18 +6,31 @@ CKirchhoff::CKirchhoff(PIC m_pic)
 	numPoints = m_pic.V.size();
 	numFaces = m_pic.F.size();
 	for (int i = 0; i < numPoints; i++){
-		vertex.row[i] = m_pic.V[i];//赋值顶点矩阵
+		VectorXd temp(3);
+		temp(0) = m_pic.V[i].X;
+		temp(1) = m_pic.V[i].Y;
+		temp(2) = m_pic.V[i].Z;		
+		vertex.row(i) = temp;//赋值顶点矩阵
 	}
 	for (int i = 0; i < numPoints; i++){
-		normal.row[i] = m_pic.VN[i];//赋值法向矩阵 vector赋值矩阵的一行
+		VectorXd temp(3);
+		temp(0) = m_pic.VN[i].NX;
+		temp(1) = m_pic.VN[i].NY;
+		temp(2) = m_pic.VN[i].NZ;
+		normal.row(i) = temp;//赋值法向矩阵 vector赋值矩阵的一行
 	}
 	for (int k = 0; k < 3; k++){
 		for (int i = 0; i < numPoints; i++){
+			/*
 			vector <double>zuobiao;
 			zuobiao.push_back(m_pic.V[m_pic.F[i].V[k]].X);
 			zuobiao.push_back(m_pic.V[m_pic.F[i].V[k]].Y);
-			zuobiao.push_back(m_pic.V[m_pic.F[i].V[k]].Z);
-			face[k].row[i] =zuobiao ;//赋值面矩阵 把索引改成顶点
+			zuobiao.push_back(m_pic.V[m_pic.F[i].V[k]].Z);*/
+			VectorXd temp(3);
+			temp(0) = m_pic.V[m_pic.F[i].V[k]].X;
+			temp(1) = m_pic.V[m_pic.F[i].V[k]].Y;
+			temp(2) = m_pic.V[m_pic.F[i].V[k]].Z;
+			face[k].row(i) = temp;//赋值面矩阵 把索引改成顶点
 		}
 	}
 }
@@ -33,6 +46,7 @@ MatrixXd CKirchhoff::computeKF(double offset){
 	MatrixXd phi = numPoints*SL*sigma;
 	MatrixXd Q = one_point_quadrature();
 	K = Q*phi;
+	return K;
 }
 
 MatrixXd CKirchhoff::single_layer(MatrixXd S , MatrixXd C){
@@ -66,13 +80,14 @@ MatrixXd CKirchhoff::motion_flux(){
 	MatrixXd res(numFaces, 6);
 	res.leftCols(3) = angular_vector();
 	res.rightCols(3) = area_vector();
+	return res;
 }
 
 MatrixXd CKirchhoff::triangle_area(){
 	MatrixXd res(numFaces, 1);
-	MatrixXd AV = area_vector();
+	MatrixXd AV = area_vector();//(numFaces, 3);
 	for (int i = 0; i < numPoints; i++){
-		res(i, 0) = sqrt(AV.dot(AV));
+		res(i, 0) = sqrt(AV.row(i).dot( AV.row(i) ));
 	}
 	return res;
 }
@@ -81,7 +96,11 @@ MatrixXd CKirchhoff::one_point_quadrature(){
 	MatrixXd VF = face_center();
 	MatrixXd NF = face_normal();
 	MatrixXd CR(numFaces, 3);
-	CR = VF.cross(NF);
+	for (int i = 0;i < numFaces;i++) {
+		Vector3d tempVF = VF.row(i);
+		Vector3d tempNF = NF.row(i);
+		CR.row(i) = tempVF.cross(tempNF);
+	}
 	MatrixXd Q(6, numFaces);
 	Q.setZero(6, numFaces);
 	Q.row(0) = areas*CR.col(0);
@@ -142,7 +161,14 @@ MatrixXd CKirchhoff::angular_vector(){
 }
 MatrixXd CKirchhoff::area_vector(){
 	MatrixXd AV(numFaces,3);
-	AV = 0.5*(face[0].cross(face[1]) + face[1].cross(face[2]) + face[2].cross(face[0]));
+	for (int i = 0;i < numFaces;i++) {
+		Vector3d tempface0 = face[0].row(i);
+		Vector3d tempface1 = face[1].row(i);
+		Vector3d tempface2 = face[2].row(i);
+
+		AV.row(i) = 0.5*(tempface0.cross(tempface1) + tempface0.cross(tempface2)
+			+ tempface2.cross(tempface0));
+	}
 	return AV;
 }
 MatrixXd CKirchhoff::solid_angle(MatrixXd src){//numPoints*3
@@ -150,13 +176,13 @@ MatrixXd CKirchhoff::solid_angle(MatrixXd src){//numPoints*3
 //	MatrixXd FacePoint(numFaces, 3);
 	for (int i = 0; i < numFaces; i++){
 		for (int j = 0; j < numPoints; j++){
-			VectorXd R1 = face[0].row(i) - src.row(j);
-			VectorXd R2 = face[1].row(i) - src.row(j);
-			VectorXd R3 = face[2].row(i) - src.row(j);
-			MatrixXd temp(3, 3);
-			temp.row[0] = R1;
-			temp.row[1] = R2;
-			temp.row[2] = R3;
+			Vector3d R1 = face[0].row(i) - src.row(j);
+			Vector3d R2 = face[1].row(i) - src.row(j);
+			Vector3d R3 = face[2].row(i) - src.row(j);//向量还是矩阵可以dot
+			Matrix3d temp(3, 3);
+			temp.row(0) = R1;
+			temp.row(1) = R2;
+			temp.row(2) = R3;
 			double N = R1.dot(R2.cross(R3));
 			double l1 = sqrt(R1.dot(R1));
 			double l2 = sqrt(R2.dot(R2));
@@ -193,17 +219,17 @@ MatrixXd CKirchhoff::computeKB(MatrixXd face[], int numFaces, int index[], doubl
 		x1 = p[i1].x;       y1 = p[i1].y;       z1 = p[i1].z;
 		x2 = p[i2].x;       y2 = p[i2].y;       z2 = p[i2].z;
 		*/
-		double x0 = face[0][0];
-		double y0 = face[0][1];
-		double z0 = face[0][2];
+		double x0 = face[0](0);
+		double y0 = face[0](1);
+		double z0 = face[0](2);
 
-		double x1 = face[1][0];
-		double y1 = face[1][1];
-		double z1 = face[1][2];
+		double x1 = face[1](0);
+		double y1 = face[1](1);
+		double z1 = face[1](2);
 
-		double x2 = face[2][0];
-		double y2 = face[2][1];
-		double z2 = face[2][2];
+		double x2 = face[2](0);
+		double y2 = face[2](1);
+		double z2 = face[2](2);
 		// get edges and cross product of edges 
 		double a1 = x1 - x0; double  b1 = y1 - y0; double  c1 = z1 - z0;
 		double a2 = x2 - x0; double b2 = y2 - y0; double c2 = z2 - z0;

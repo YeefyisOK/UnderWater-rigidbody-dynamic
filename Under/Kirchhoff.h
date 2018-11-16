@@ -7,6 +7,7 @@
 #include <Eigen/Dense>
 #include <math.h>
 #include <vector>
+using namespace Eigen;
 class CKirchhoff
 {
 public:
@@ -17,7 +18,6 @@ public:
 	MatrixXd face[3];
 
 	CKirchhoff(PIC m_pic);
-	~CKirchhoff(void);
 	MatrixXd angular_vector();
 	double area();
 	MatrixXd triangle_area();
@@ -29,9 +29,10 @@ public:
 	MatrixXd one_point_quadrature();
 	MatrixXd solid_angle(MatrixXd src);
 	MatrixXd computeKF(double offset);
-
+	//º∆À„KB
 	void Subexpressions(double &w0, double &w1, double &w2,
 		double &f1, double &f2, double &f3, double &g0, double &g1, double &g2);
 	MatrixXd computeKB(MatrixXd face[], int numFaces, int index[], double mass);
-	CVector6D computeK();
+
+	CVector6D computeK();//º∆À„K=KF+KB
 };

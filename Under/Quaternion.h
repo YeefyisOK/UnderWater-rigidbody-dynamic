@@ -2,10 +2,10 @@
 #include "Matrix.h"
 #include <math.h>
 
-class Quaternion
+class CQuaternion
 {
 public:
-	Quaternion(float _w=0,float _x=1,float _y=0,float _z=0)
+	CQuaternion(float _w=0,float _x=1,float _y=0,float _z=0)
 	{
 		w = _w;
 		x = _x;
@@ -104,7 +104,7 @@ public:
 			}
 		}
 	}
-	static Quaternion FromRotation(float _x,float _y,float _z,float angleInDegree)
+	static CQuaternion FromRotation(float _x,float _y,float _z,float angleInDegree)
 	{
 		// 向量的单位化
 		float length = sqrt(_x * _x + _y * _y + _z * _z);
@@ -112,7 +112,7 @@ public:
 		_y /= length;
 		_z /= length;
 		float alpha = angleInDegree / 180 * 3.1415926;// 已转换弧度制
-		return Quaternion(
+		return CQuaternion(
 			sin(alpha / 2) * _x,
 			sin(alpha / 2) * _y,
 			sin(alpha / 2) * _z,

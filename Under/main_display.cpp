@@ -2,10 +2,9 @@
 #include<iostream>
 #include<sstream> 
 #include<gl/glut.h>
-#include<gl/gl.h>
-#include<gl/glu.h>
 #include<stdio.h>
 #include"main_display.h"
+#include"Quaternion.h"
 #include"Kirchhoff.h"
 #include "PIC.h"
 #include <fstream>
@@ -16,6 +15,11 @@ using namespace std;
 定时器第一个参数是每隔millis毫秒便调用func函数，并且创一个value参数进去
 因为一个定时器只被调用一次，所以需要多次调用定时器
 */
+
+//obj读取
+string name = "H:\\MeshData\\Eight.obj";
+PIC m_pic;
+
 CMatrix toDaOmega(CVector3D omega);
 void drawScene();
 //窗口的大小
@@ -40,8 +44,7 @@ CVector3D v_f(f);
 CVector3D v_rand(one);//单位阵 随便设一个
 //基尔霍夫张量
 CKirchhoff m_K(m_pic);
-m_K.compute();
-CVector6D K(v_t, v_rand);//随便设一个
+CVector6D K = m_K.computeK();//随便设一个
 
 //中间量
 CMatrix m_R_ = m_R%m_DaOmega;
@@ -53,12 +56,9 @@ CVector3D v_p_ = v_p*v_omega += v_f;
 
 //偏移量 旋转量
 CVector3D temp_deltay(0,0,0);
-Quaternion q(0,0,0,0);
+CQuaternion q(0, 0, 0, 0);
 
 double delta_t = 0.05;
-//obj读取
-string name = "H:\\MeshData\\Eight.obj";
-PIC m_pic;
 /*
 CVector6D computeKB(){//计算真空中的KB
 
@@ -283,7 +283,7 @@ void reshape(int width, int height) {
 //矩阵转化为四元数，四元数乘以时间后，变回矩阵
 CMatrix toMat(CMatrix R_){
 	CMatrix res;
-	Quaternion q;
+	CQuaternion q;
 	q.FromRotationMatrix(R_);
 	q.setomega(q.get_w()*delta_t);
 	res=q.ToMatrix();
@@ -320,7 +320,7 @@ void TimerFunction(int value)
 	/*
 	//计算物体变化位置方向
 	glTranslated(temp_deltay[0], temp_deltay[1], temp_deltay[2]);
-	Quaternion q;
+	CQuaternion q;
 	q.FromRotationMatrix(m_R_);
 	q.setomega(q.get_w()*delta_t);
 
