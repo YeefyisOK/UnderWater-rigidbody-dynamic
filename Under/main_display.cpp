@@ -8,6 +8,7 @@
 #include"Kirchhoff.h"
 #include "PIC.h"
 #include <fstream>
+#include<iostream>
 using namespace std;
 /*
 定时器：glutTimerFunc(unsigned int millis, void (*func)(int value), int value);
@@ -37,9 +38,9 @@ CVector3D v_omega(omega);
 CVector3D v_velocity(velocity);
 CMatrix m_DaOmega=toDaOmega(v_omega);//Ω
 CMatrix m_R;
-CPoint3D p_y(y);
-CVector3D v_t(t);
-CVector3D v_f(f);
+CPoint3D p_y(0,0,0);//y
+CVector3D v_t(0,0,0);//t
+CVector3D v_f(0,-0.98f,0);//f
 
 CVector3D v_rand(one);//单位阵 随便设一个
 CVector6D K(0,0,0,0,0,0);
@@ -51,24 +52,17 @@ CVector6D K = m_K.computeK();
 
 //中间量
 CMatrix m_R_ ;
-CPoint3D p_y_;
-CVector3D v_l ;
-CVector3D v_p;
-CVector3D v_l_ ;
-CVector3D v_p_ ;
+CPoint3D p_y_(0,0,0);
+CVector3D v_l(0, 0, 0);
+CVector3D v_p(0, 0, 0);
+CVector3D v_l_(0, 0, 0);
+CVector3D v_p_(0, 0, 0);
 
 //偏移量 旋转量
 CVector3D temp_deltay(0,0,0);
 CQuaternion q(0, 0, 0, 0);
 
 double delta_t = 0.05;
-/*
-CVector6D computeKB(){//计算真空中的KB
-
-}
-CVector6D computeKF(){//计算流体的KF
-
-}*/
 void ReadPIC()
 {
 	ifstream ifs(name);//cube bunny Eight
@@ -139,7 +133,7 @@ void GLDraw()
 {
 	for (int i = 0; i<m_pic.F.size(); i++)
 	{
-		glBegin(GL_POINTS);                            // 绘制三角形GL_TRIANGLES;GL_LINE_LOOP;GL_LINES;GL_POINTS
+		glBegin(GL_TRIANGLE_FAN);                            // 绘制三角形GL_TRIANGLES;GL_LINE_LOOP;GL_LINES;GL_POINTS
 		if (m_pic.VT.size() != 0)glTexCoord2f(m_pic.VT[m_pic.F[i].T[0]].TU, m_pic.VT[m_pic.F[i].T[0]].TV);  //纹理    
 		if (m_pic.VN.size() != 0)glNormal3f(m_pic.VN[m_pic.F[i].N[0]].NX, m_pic.VN[m_pic.F[i].N[0]].NY, m_pic.VN[m_pic.F[i].N[0]].NZ);//法向量
 		glVertex3f(m_pic.V[m_pic.F[i].V[0]].X , m_pic.V[m_pic.F[i].V[0]].Y , m_pic.V[m_pic.F[i].V[0]].Z );        // 上顶点
@@ -180,6 +174,13 @@ void init() {
 	//基尔霍夫张量
 	CKirchhoff m_K(m_pic);
 	K = m_K.computeK();
+	cout << "K0" << K.getData1().getm_data(0);
+	cout << "K1" << K.getData1().getm_data(1);
+	cout << "K2" << K.getData1().getm_data(2);
+
+	cout << "K3" << K.getData2().getm_data(0);
+	cout << "K4" << K.getData2().getm_data(1);
+	cout << "K5" << K.getData2().getm_data(2);
 	//glClearColor(0.0, 0.0, 0.0, 1.0);           //设置背景颜色  
 	glClearColor(0.75f, 0.75f, 0.75f, 0.0f);
 	//深度测试的相关设置 
@@ -270,7 +271,7 @@ void drawScene()           //绘制
 	glRotated(q.get_w(), q.get_x(), q.get_y(), q.get_z());
 	glColor3f(0.0, 1.0, 0.0);     // Set current color to green 
 	GLDraw();
-	//DrawCylinder(0.5, 0.7, 32);
+	//DrawCylinder(1,2, 32);
 	//glutSolidCube(3);
 
 } //窗口大小发生变化时的响应函数 
@@ -281,10 +282,10 @@ void reshape(int width, int height) {
 	double ratio = (double)width / height;
 	glLoadIdentity();
 	gluPerspective(60, ratio, 1, 1000);
-
+	//glOrtho(-5, 5, -5, 5, -10, 10);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
-	gluLookAt(12, 0, -2, 0, 0, 0, 0, 0, 1);
+	gluLookAt(12, 0, -2, 0, 0, -2, 0, 0, 1);
 }
 
 //矩阵转化为四元数，四元数乘以时间后，变回矩阵
@@ -312,9 +313,9 @@ void TimerFunction(int value)
 	//求解下一时刻的7个量
 	CMatrix temp_deltaR = toMat(m_R_);
 	m_R = m_R%temp_deltaR;
-	//CVector3D temp_deltay(p_y_[0] * delta_t, p_y_[1] * delta_t, p_y_[2] * delta_t);
 	temp_deltay.setData(p_y_[0] * delta_t, p_y_[1] * delta_t, p_y_[2] * delta_t);
 	p_y += temp_deltay;
+	cout << "temp_deltay是" << temp_deltay.getm_data(0);
 	CVector3D temp_deltaL(v_l_[0] * delta_t, v_l_[1] * delta_t, v_l_[2] * delta_t);
 	v_l += temp_deltaL;
 	CVector3D temp_deltap(v_p_[0] * delta_t, v_p_[1] * delta_t, v_p_[2] * delta_t);
@@ -340,8 +341,6 @@ void TimerFunction(int value)
 	glutPostRedisplay(); //标志重新绘制
 	glutTimerFunc(1000, TimerFunction, 1);
 }
-
-
 
 int main(int argc, char* argv[]) {
 	glutInit(&argc, argv);    //GLUT 库的初始化 

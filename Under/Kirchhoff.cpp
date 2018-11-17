@@ -135,12 +135,12 @@ MatrixXd CKirchhoff::one_point_quadrature(){
 		CR.row(i) = tempVF.cross(tempNF);
 	}
 	MatrixXd Q(6, numFaces);
-	Q.row(0) = (areas.array()*CR.col(0).array()).matrix();
-	Q.row(1) = (areas.array()*CR.col(1).array()).matrix();
-	Q.row(2) = (areas.array()*CR.col(2).array()).matrix();
-	Q.row(3) = (areas.array()*NF.col(0).array()).matrix();
-	Q.row(4) = (areas.array()*NF.col(1).array()).matrix();
-	Q.row(5) = (areas.array()*NF.col(2).array()).matrix();
+	Q.row(0) = (areas.array()*CR.col(0).array()).matrix().transpose();
+	Q.row(1) = (areas.array()*CR.col(1).array()).matrix().transpose();
+	Q.row(2) = (areas.array()*CR.col(2).array()).matrix().transpose();
+	Q.row(3) = (areas.array()*NF.col(0).array()).matrix().transpose();
+	Q.row(4) = (areas.array()*NF.col(1).array()).matrix().transpose();
+	Q.row(5) = (areas.array()*NF.col(2).array()).matrix().transpose();
 	return Q;
 }
 MatrixXd CKirchhoff::angular_vector(){
