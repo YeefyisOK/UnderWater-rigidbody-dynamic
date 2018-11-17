@@ -30,6 +30,7 @@ public:
 	MatrixXd single_layer(MatrixXd a,MatrixXd b);
 	MatrixXd motion_flux();
 	MatrixXd one_point_quadrature();
+	MatrixXd computephi(MatrixXd S, MatrixXd C, MatrixXd sigma);
 	MatrixXd solid_angle(MatrixXd src);
 	MatrixXd computeKF(double offset);
 	//º∆À„KB

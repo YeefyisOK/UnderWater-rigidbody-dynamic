@@ -6,7 +6,7 @@ CKirchhoff::CKirchhoff(PIC m_pic)
 	numPoints = m_pic.V.size();
 	numFaces = m_pic.F.size();
 	vertex.resize(numPoints, 3);
-	normal.resize(numPoints, 3);
+	normal.resize(numFaces, 3);
 	face[0].resize(numFaces, 3);
 	face[1].resize(numFaces, 3);
 	face[2].resize(numFaces, 3);
@@ -19,17 +19,18 @@ CKirchhoff::CKirchhoff(PIC m_pic)
 			vertex.row(i) = temp;//赋值顶点矩阵
 		}
 	}
-	if (m_pic.VN.size() > 0) {
+	if (m_pic.F.size() > 0) {
 		for (int i = 0; i < numPoints; i++){
+			
 			VectorXd temp(3);
-			temp(0) = m_pic.VN[i].NX;
-			temp(1) = m_pic.VN[i].NY;
-			temp(2) = m_pic.VN[i].NZ;
+			temp(0) = m_pic.F[i].N[0];
+			temp(1) = m_pic.F[i].N[1];
+			temp(2) = m_pic.F[i].N[2];
 			normal.row(i) = temp;//赋值法向矩阵 vector赋值矩阵的一行
 		}
 	}
 	if (m_pic.F.size() > 0) {
-		for (int k = 0; k < 3; k++){
+		for (int k = 0; k < 3; k++){//第几行
 			for (int i = 0; i < numPoints; i++){
 				/*
 				vector <double>zuobiao;
@@ -48,24 +49,44 @@ CKirchhoff::CKirchhoff(PIC m_pic)
 }
 MatrixXd CKirchhoff::computeKF(double offset){
 	MatrixXd K(6, 6);
-	MatrixXd S = vertex - offset * normal;
+	MatrixXd S = face_center() - offset * normal;
 	MatrixXd M = solid_angle(S);
 	MatrixXd FL = motion_flux();
-	VectorXd sigma = M.colPivHouseholderQr().solve(FL);//sigma=strength
+	MatrixXd sigma(numFaces, 6);
+	for (int i = 0; i< 6;i++) {
+
+		sigma.col(i) = M.householderQr().solve(FL.col(i));//sigma=strength
+	}
 	//MatrixXd sigma = division(MF, M);
 	MatrixXd C = face_center();
 	MatrixXd SL = single_layer(S ,C);
-	MatrixXd phi = numPoints*SL*sigma;
+	MatrixXd phi = computephi(S, C,sigma);// numFaces * SL * sigma;
 	MatrixXd Q = one_point_quadrature();
 	K = Q*phi;
 	return K;
 }
 
 MatrixXd CKirchhoff::single_layer(MatrixXd S , MatrixXd C){
-	MatrixXd res(numPoints, 1);
-	MatrixXd rr = C - S;
-	for (int i = 0; i < numPoints; i++){
-		res(i,0) = 1/sqrt( rr.row(i).dot(rr.row(i) ) );
+	MatrixXd res(numFaces, numFaces);
+	for (int i = 0; i < numFaces; i++){//C Z
+		for (int j = 0;j < numFaces;j++) {//S
+			VectorXd temp = C.row(i) - S.row(j);
+			res(i,j) = 1/sqrt(temp.dot(temp) );
+		}
+	}
+	return res;
+}
+MatrixXd CKirchhoff::computephi(MatrixXd S, MatrixXd C, MatrixXd sigma) {
+	MatrixXd res(numFaces, 6);
+	MatrixXd SL = single_layer(S, C);
+	for (int i = 0;i < 6;i++) {//第几组
+		res.col(i) = (SL.rowwise().sum().array()*sigma.col(i).array()).matrix();
+		/*
+		double sum = 0;
+		for (int j = 0;j < numFaces;j++) {//z固定
+			SL.row(j)*sigma(j, i);
+			
+		}*/
 	}
 	return res;
 }
@@ -79,7 +100,7 @@ MatrixXd CKirchhoff::face_normal(){
 	return AV;
 }
 MatrixXd CKirchhoff::face_center(){
-	MatrixXd res(numPoints, 3);
+	MatrixXd res(numFaces, 3);
 	res = (face[0] + face[1] + face[2])/3;
 	return res;
 }
@@ -104,7 +125,7 @@ MatrixXd CKirchhoff::triangle_area(){
 	return res;
 }
 MatrixXd CKirchhoff::one_point_quadrature(){
-	MatrixXd areas = area_vector();
+	MatrixXd areas = triangle_area();
 	MatrixXd VF = face_center();
 	MatrixXd NF = face_normal();
 	MatrixXd CR(numFaces, 3);
@@ -114,13 +135,12 @@ MatrixXd CKirchhoff::one_point_quadrature(){
 		CR.row(i) = tempVF.cross(tempNF);
 	}
 	MatrixXd Q(6, numFaces);
-	Q.setZero(6, numFaces);
-	Q.row(0) = areas*CR.col(0);
-	Q.row(1) = areas*CR.col(1);
-	Q.row(2) = areas*CR.col(2);
-	Q.row(3) = areas*NF.col(3);
-	Q.row(4) = areas*NF.col(4);
-	Q.row(5) = areas*NF.col(5);
+	Q.row(0) = (areas.array()*CR.col(0).array()).matrix();
+	Q.row(1) = (areas.array()*CR.col(1).array()).matrix();
+	Q.row(2) = (areas.array()*CR.col(2).array()).matrix();
+	Q.row(3) = (areas.array()*NF.col(0).array()).matrix();
+	Q.row(4) = (areas.array()*NF.col(1).array()).matrix();
+	Q.row(5) = (areas.array()*NF.col(2).array()).matrix();
 	return Q;
 }
 MatrixXd CKirchhoff::angular_vector(){
