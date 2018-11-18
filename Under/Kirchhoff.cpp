@@ -232,10 +232,10 @@ void CKirchhoff::Subexpressions(double &w0, double &w1, double &w2, double &f1, 
 	g1 = f2 + w1*(f1 + w1);
 	g2 = f2 + w2*(f1 + w2);
 }
-MatrixXd CKirchhoff::computeKB() {
+MatrixXd CKirchhoff::comuputeJ() {
 	double mass = 0;
 	CPoint3D cm(0, 0, 0);
-	MatrixXd inertia(6, 6);
+	MatrixXd inertia(3, 3);
 	const double mult[10] = { 1 / 6, 1 / 24, 1 / 24, 1 / 24, 1 / 60, 1 / 60, 1 / 60, 1 / 120, 1 / 120, 1 / 120 };
 	double intg[10] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // order: 1, x, y, z, x^2, y^2, z^2, xy, yz, zx 
 	for (int t = 0; t < numFaces; t++) { // get vertices of triangle t 
@@ -273,7 +273,7 @@ MatrixXd CKirchhoff::computeKB() {
 		// update integrals 
 		//const double mult[10] = { 1 / 6, 1 / 24, 1 / 24, 1 / 24, 1 / 60, 1 / 60, 1 / 60, 1 / 120, 1 / 120, 1 / 120 };
 
-		intg[0] += d0*f1x/6; intg[1] += d0*f2x/24; intg[2] += d1*f2y / 24; intg[3] += d2*f2z / 24;
+		intg[0] += d0*f1x / 6; intg[1] += d0*f2x / 24; intg[2] += d1*f2y / 24; intg[3] += d2*f2z / 24;
 		intg[4] += d0*f3x / 60; intg[5] += d1*f3y / 60; intg[6] += d2*f3z / 60;
 		intg[7] += d0*(y0*g0x + y1*g1x + y2*g2x) / 120; 
 		intg[8] += d1*(z0*g0y + z1*g1y + z2*g2y) / 120; 
@@ -288,21 +288,25 @@ MatrixXd CKirchhoff::computeKB() {
 	inertia(2, 2) = intg[4] + intg[5] - mass*(cm.getm_data(0)*cm.getm_data(0) + cm.getm_data(1)*cm.getm_data(1));
 	inertia(0, 1) = inertia(1, 0) = -(intg[7] - mass*cm.getm_data(0)*cm.getm_data(1));
 	inertia(1, 2) = inertia(2, 1) = -(intg[8] - mass*cm.getm_data(1)*cm.getm_data(2));
-	inertia(2, 0) = inertia(0, 2) - (intg[9] - mass*cm.getm_data(2)*cm.getm_data(0));
+	inertia(0, 2) = inertia(2, 0) = -(intg[9] - mass*cm.getm_data(2)*cm.getm_data(0));
 	return inertia;
 }
+CVector6D CKirchhoff::computeKB(double m) {
+	MatrixXd J=comuputeJ();
+	MatrixXd temp1 = J.rowwise().sum();
+	CVector6D res(temp1(0,0), temp1(1, 0), temp1(2, 0),m,m,m);
+	return res;
+}
 CVector6D CKirchhoff::computeK(){
-	MatrixXd KB = computeKB();//mass
+	CVector6D KB = computeKB(5.0f);//mass
 	//MatrixXd KF = computeKF(0.4);//offest
-	MatrixXd temp1 = KB.rowwise().sum();
-	//MatrixXd temp2 = KF.rowwise().sum();
-	//temp1 = temp1 + temp2;
-	double a = temp1(0, 0);
-	double b = temp1(1, 0);
-	double c = temp1(2, 0);
-	double d = temp1(3, 0);
-	double e = temp1(4, 0);
-	double f = temp1(5, 0);
+	//MatrixXd temp = KF.rowwise().sum();
+	double a = KB[0]; //temp(0, 0);
+	double b = KB[1];//temp(1, 0);
+	double c = KB[2];//temp(2, 0);
+	double d = KB[3];//temp(3, 0);
+	double e = KB[4];//temp(4, 0);
+	double f = KB[5];//temp(5, 0);
 	CVector6D Kirchhoff(a,b,c,d,e,f);
 	return Kirchhoff;
 }

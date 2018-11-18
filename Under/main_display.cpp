@@ -28,21 +28,19 @@ GLfloat windowWidth;
 GLfloat windowHeight;
 
 //需要已知的7+1个量
-double omega[3] = { 0, 0, 1 };
-double velocity[3] ={0, -1,0 };
+double omega[3] = { 0, 1, 1 };
+double velocity[3] ={0, 0, 0 };
 double y[3] = { 0, 0, 0 };
-double t[3] = { 0, 0, 0 };
-double f[3] = { 0, -9.8f, 0 };
-double one[3] = { 1, 1, 1 };//零 随便设一个
+double ts[3] = { 0, 0, 0 };
+double fs[3] = { 0, -9.8f, 0 };
 CVector3D v_omega(omega);
 CVector3D v_velocity(velocity);
 CMatrix m_DaOmega=toDaOmega(v_omega);//Ω
 CMatrix m_R;
 CPoint3D p_y(0,0,0);//y
-CVector3D v_t(0,0,0);//t
-CVector3D v_f(0,-0.98f,0);//f
+CVector3D v_ts(0,0,0);//ts
+CVector3D v_fs(0,-10.0f,0);//fs
 
-CVector3D v_rand(one);//单位阵 随便设一个
 CVector6D K(0,0,0,0,0,0);
 /*
 //基尔霍夫张量
@@ -57,12 +55,15 @@ CVector3D v_l(0, 0, 0);
 CVector3D v_p(0, 0, 0);
 CVector3D v_l_(0, 0, 0);
 CVector3D v_p_(0, 0, 0);
+CVector3D v_t(0, 0, 0);
+CVector3D v_f(0, 0, 0);
+
 
 //偏移量 旋转量
 CVector3D temp_deltay(0,0,0);
 CQuaternion q(0, 0, 0, 0);
 
-double delta_t = 0.05;
+double delta_t = 0.5;
 void ReadPIC()
 {
 	ifstream ifs(name);//cube bunny Eight
@@ -200,18 +201,47 @@ CMatrix toDaOmega(CVector3D omega){//w->Ω
 	res[2][2] = 0;
 	return res;
 }
+CVector6D ts2t(CMatrix R, CMatrix Y,CVector3D ts,CVector3D fs) {
+	Matrix3d r;
+	Matrix3d y;
+	for (int i = 0;i < 3;i++) {
+		for (int j = 0;j < 3;j++) {
+			r(i, j) = R[i][j];
+			y(i, j) = Y[i][j];
+		}
+	}
+	Matrix3d rt = r.transpose();
+	Matrix3d zero;
+	zero.setZero(3, 3);
+	Matrix3d negRty = zero-rt * y;
+	MatrixXd trans(6, 6);
+	trans.block(0, 0, 3, 3) = rt;
+	trans.block(0, 3, 3, 3) = negRty;
+	trans.block(3, 0, 3, 3) = zero;
+	trans.block(3, 3, 3, 3) = rt;
+	VectorXd tsfs(6);
+	tsfs(0) = ts[0];
+	tsfs(1) = ts[1];
+	tsfs(2) = ts[2];
+	tsfs(3) = fs[0];
+	tsfs(4) = fs[1];
+	tsfs(5) = fs[2];
+	VectorXd resV = trans * tsfs;
+	CVector6D resC(resV(0), resV(1), resV(2), resV(3), resV(4), resV(5));
+	return resC;
+}
 void init() {
 	ReadPIC();
 	//基尔霍夫张量
 	CKirchhoff m_K(m_pic);
 	K = m_K.computeK();
-	cout << "K零：" << K.getData1().getm_data(0);
-	cout << "K一：" << K.getData1().getm_data(1);
-	cout << "K二：" << K.getData1().getm_data(2);
+	cout << "K零：" << K.getData1().getm_data(0) << endl;
+	cout << "K一：" << K.getData1().getm_data(1) << endl;
+	cout << "K二：" << K.getData1().getm_data(2) << endl;
 
-	cout << "K三：" << K.getData2().getm_data(0);
-	cout << "K四：" << K.getData2().getm_data(1);
-	cout << "K五：" << K.getData2().getm_data(2);
+	cout << "K三：" << K.getData2().getm_data(0) << endl;
+	cout << "K四：" << K.getData2().getm_data(1) << endl;
+	cout << "K五：" << K.getData2().getm_data(2) << endl;
 	//glClearColor(0.0, 0.0, 0.0, 1.0);           //设置背景颜色  
 	glClearColor(0.75f, 0.75f, 0.75f, 0.0f);
 	//深度测试的相关设置 
@@ -336,11 +366,11 @@ void reshape(int width, int height) {
 	glMatrixMode(GL_PROJECTION);
 	double ratio = (double)width / height;
 	glLoadIdentity();
-	gluPerspective(60, ratio, 1, 1000);
-	//glOrtho(-5, 5, -5, 5, -10, 10);
+	//gluPerspective(60, ratio, 1, 1000);
+	glOrtho(-5, 5, -5, 5, -10, 10);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
-	gluLookAt(16, 0, -2, 0, 0, -2, 0, 0, 1);
+	gluLookAt(4, 0, -2, 0, 0, -2, 0, 0, 1);
 }
 
 //矩阵转化为四元数，四元数乘以时间后，变回矩阵
@@ -356,10 +386,17 @@ CMatrix toMat(CMatrix R_){
 void TimerFunction(int value)
 {
 	//中间量
-	m_R_ = m_R%m_DaOmega;
+	CMatrix m_Y = toDaOmega(p_y);
+	CVector6D temp = ts2t(m_R, m_Y, v_ts, v_fs);
+	v_t = temp.getData1();
+	v_f = temp.getData2();//把ts fs转化为t f
+
+	m_DaOmega = toDaOmega(v_omega);
+	m_R_ = m_R %m_DaOmega;
 	p_y_ = m_R *v_velocity;
 	v_l = K.getData1() *v_omega;
 	v_p = K.getData2() *v_velocity;
+
 	v_l_ = v_l*v_omega += v_p*v_velocity += v_t;
 	v_p_ = v_p*v_omega += v_f;
 
@@ -370,14 +407,13 @@ void TimerFunction(int value)
 	m_R = m_R%temp_deltaR;
 	temp_deltay.setData(p_y_[0] * delta_t, p_y_[1] * delta_t, p_y_[2] * delta_t);
 	p_y += temp_deltay;
-	cout << "位置是";
+	cout << "位置是:(" << p_y.getm_data(0) << "," << p_y.getm_data(1) << "," << p_y.getm_data(2) << ")"<<endl;
 	CVector3D temp_deltaL(v_l_[0] * delta_t, v_l_[1] * delta_t, v_l_[2] * delta_t);
 	v_l += temp_deltaL;
 	CVector3D temp_deltap(v_p_[0] * delta_t, v_p_[1] * delta_t, v_p_[2] * delta_t);
 	v_p += temp_deltap;
 	v_omega = v_l /= K.getData1();
 	v_velocity = v_p /= K.getData2();
-
 	q.FromRotationMatrix(m_R_);
 	q.setomega(q.get_w()*delta_t);
 	/*
@@ -412,8 +448,8 @@ int main(int argc, char* argv[]) {
 	glutDisplayFunc(display);               //设置窗口重绘时的响应函数 
 	glutReshapeFunc(reshape);              //设置窗口大小发生变化时的响应函数 
 
-	//定时器  每1000毫秒触发一次
-	glutTimerFunc(1000, TimerFunction, 1);
+	//定时器  每500毫秒触发一次
+	glutTimerFunc(500, TimerFunction, 1);
 
 	glutMainLoop();                   //消息循环：获取消息，分发消息，响应消息 
 	return 0;
