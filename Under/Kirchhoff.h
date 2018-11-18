@@ -30,13 +30,12 @@ public:
 	MatrixXd single_layer(MatrixXd a,MatrixXd b);
 	MatrixXd motion_flux();
 	MatrixXd one_point_quadrature();
-	MatrixXd computephi(MatrixXd S, MatrixXd C, MatrixXd sigma);
 	MatrixXd solid_angle(MatrixXd src);
 	MatrixXd computeKF(double offset);
 	//º∆À„KB
 	void Subexpressions(double &w0, double &w1, double &w2,
 		double &f1, double &f2, double &f3, double &g0, double &g1, double &g2);
-	MatrixXd computeKB(double mass);
+	MatrixXd computeKB();
 
 	CVector6D computeK();//º∆À„K=KF+KB
 };

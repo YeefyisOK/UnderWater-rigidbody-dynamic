@@ -55,12 +55,12 @@ MatrixXd CKirchhoff::computeKF(double offset){
 	MatrixXd sigma(numFaces, 6);
 	for (int i = 0; i< 6;i++) {
 
-		sigma.col(i) = M.householderQr().solve(FL.col(i));//sigma=strength
+		sigma.col(i) = M.colPivHouseholderQr().solve(FL.col(i));//sigma=strength NAN!
 	}
 	//MatrixXd sigma = division(MF, M);
 	MatrixXd C = face_center();
-	MatrixXd SL = single_layer(S ,C);
-	MatrixXd phi = computephi(S, C,sigma);// numFaces * SL * sigma;
+	MatrixXd SL = single_layer(S ,C);//inf！
+	MatrixXd phi = SL* sigma;// numFaces * SL * sigma;
 	MatrixXd Q = one_point_quadrature();
 	K = Q*phi;
 	return K;
@@ -71,25 +71,15 @@ MatrixXd CKirchhoff::single_layer(MatrixXd S , MatrixXd C){
 	for (int i = 0; i < numFaces; i++){//C Z
 		for (int j = 0;j < numFaces;j++) {//S
 			VectorXd temp = C.row(i) - S.row(j);
-			res(i,j) = 1/sqrt(temp.dot(temp) );
+			double isZero = temp.dot(temp);
+			if (isZero<0.05 || isZero>-0.05)
+				isZero = 0.05;
+			res(i,j) = 1.0/sqrt(isZero);
 		}
 	}
 	return res;
 }
-MatrixXd CKirchhoff::computephi(MatrixXd S, MatrixXd C, MatrixXd sigma) {
-	MatrixXd res(numFaces, 6);
-	MatrixXd SL = single_layer(S, C);
-	for (int i = 0;i < 6;i++) {//第几组
-		res.col(i) = (SL.rowwise().sum().array()*sigma.col(i).array()).matrix();
-		/*
-		double sum = 0;
-		for (int j = 0;j < numFaces;j++) {//z固定
-			SL.row(j)*sigma(j, i);
-			
-		}*/
-	}
-	return res;
-}
+
 
 MatrixXd CKirchhoff::face_normal(){
 	MatrixXd AV = area_vector();
@@ -160,7 +150,7 @@ MatrixXd CKirchhoff::angular_vector(){
 	MatrixXd pp31(numFaces, 1);
 	for (int i = 0; i < numFaces; i++){
 		pp12(i, 0) = face[0].row(i).dot(face[1].row(i));
-		pp23(i, 0) = face[1].row(i).dot(face[2].row(i));
+		pp23(i, 0) = face[2].row(i).dot(face[1].row(i));
 		pp31(i, 0) = face[2].row(i).dot(face[0].row(i));
 	}
 	//?
@@ -172,8 +162,8 @@ MatrixXd CKirchhoff::angular_vector(){
 	MatrixXd p23= pp2 + pp3 + pp23;
 	MatrixXd p31= pp3 + pp1 + pp31;
 
-	MatrixXd p2p1 = p2-p1;
-	MatrixXd p3p2 = p3 - p1;
+	MatrixXd p2p1 = p2 - p1;
+	MatrixXd p3p2 = p3 - p2;
 	MatrixXd p1p3 = p1 - p3;
 	MatrixXd t1(numFaces, 3);
 	MatrixXd t2(numFaces, 3);
@@ -242,7 +232,8 @@ void CKirchhoff::Subexpressions(double &w0, double &w1, double &w2, double &f1, 
 	g1 = f2 + w1*(f1 + w1);
 	g2 = f2 + w2*(f1 + w2);
 }
-MatrixXd CKirchhoff::computeKB(double mass) {
+MatrixXd CKirchhoff::computeKB() {
+	double mass = 0;
 	CPoint3D cm(0, 0, 0);
 	MatrixXd inertia(6, 6);
 	const double mult[10] = { 1 / 6, 1 / 24, 1 / 24, 1 / 24, 1 / 60, 1 / 60, 1 / 60, 1 / 120, 1 / 120, 1 / 120 };
@@ -254,17 +245,17 @@ MatrixXd CKirchhoff::computeKB(double mass) {
 		x1 = p[i1].x;       y1 = p[i1].y;       z1 = p[i1].z;
 		x2 = p[i2].x;       y2 = p[i2].y;       z2 = p[i2].z;
 		*/
-		double x0 = face[0](0);
-		double y0 = face[0](1);
-		double z0 = face[0](2);
+		double x0 = face[0](t,0);
+		double y0 = face[0](t,1);
+		double z0 = face[0](t,2);
 
-		double x1 = face[1](0);
-		double y1 = face[1](1);
-		double z1 = face[1](2);
+		double x1 = face[1](t,0);
+		double y1 = face[1](t,1);
+		double z1 = face[1](t,2);
 
-		double x2 = face[2](0);
-		double y2 = face[2](1);
-		double z2 = face[2](2);
+		double x2 = face[2](t,0);
+		double y2 = face[2](t,1);
+		double z2 = face[2](t,2);
 		// get edges and cross product of edges 
 		double a1 = x1 - x0; double  b1 = y1 - y0; double  c1 = z1 - z0;
 		double a2 = x2 - x0; double b2 = y2 - y0; double c2 = z2 - z0;
@@ -280,16 +271,18 @@ MatrixXd CKirchhoff::computeKB(double mass) {
 		Subexpressions(y0, y1, y2, f1y, f2y, f3y, g0y, g1y, g2y);
 		Subexpressions(z0, z1, z2, f1z, f2z, f3z, g0z, g1z, g2z);
 		// update integrals 
-		intg[0] += d0*f1x; intg[1] += d0*f2x; intg[2] += d1*f2y; intg[3] += d2*f2z;
-		intg[4] += d0*f3x; intg[5] += d1*f3y; intg[6] += d2*f3z;
-		intg[7] += d0*(y0*g0x + y1*g1x + y2*g2x); intg[8] += d1*(z0*g0y + z1*g1y + z2*g2y); intg[9] += d2*(x0*g0z + x1*g1z + x2*g2z);
+		//const double mult[10] = { 1 / 6, 1 / 24, 1 / 24, 1 / 24, 1 / 60, 1 / 60, 1 / 60, 1 / 120, 1 / 120, 1 / 120 };
+
+		intg[0] += d0*f1x/6; intg[1] += d0*f2x/24; intg[2] += d1*f2y / 24; intg[3] += d2*f2z / 24;
+		intg[4] += d0*f3x / 60; intg[5] += d1*f3y / 60; intg[6] += d2*f3z / 60;
+		intg[7] += d0*(y0*g0x + y1*g1x + y2*g2x) / 120; 
+		intg[8] += d1*(z0*g0y + z1*g1y + z2*g2y) / 120; 
+		intg[9] += d2*(x0*g0z + x1*g1z + x2*g2z) / 120;
 	}
-	for (int i = 0; i < 10; i++)
-		intg[i] *= mult[i];
 	mass = intg[0];
-	// center of mass
+	// 质心
 	cm.setData(intg[1] / mass, intg[2] / mass, intg[3] / mass);
-	// inertia tensor relative to center of mass 
+	// 相对于质心的惯性张量
 	inertia(0, 0) = intg[5] + intg[6] - mass*(cm.getm_data(1)*cm.getm_data(1) + cm.getm_data(2)*cm.getm_data(2));
 	inertia(1, 1) = intg[4] + intg[6] - mass*(cm.getm_data(2)*cm.getm_data(2) + cm.getm_data(0)*cm.getm_data(0));
 	inertia(2, 2) = intg[4] + intg[5] - mass*(cm.getm_data(0)*cm.getm_data(0) + cm.getm_data(1)*cm.getm_data(1));
@@ -299,8 +292,8 @@ MatrixXd CKirchhoff::computeKB(double mass) {
 	return inertia;
 }
 CVector6D CKirchhoff::computeK(){
-	MatrixXd KF = computeKF(0.05);//offest
-	MatrixXd KB = computeKB(10);//mass
+	MatrixXd KF = computeKF(0.4);//offest
+	MatrixXd KB = computeKB();//mass
 	MatrixXd temp1 = KF.rowwise().sum();
 	MatrixXd temp2 = KB.rowwise().sum();
 	temp1 = temp1 + temp2;
