@@ -23,9 +23,9 @@ CKirchhoff::CKirchhoff(PIC m_pic)
 		for (int i = 0; i < numPoints; i++){
 			
 			VectorXd temp(3);
-			temp(0) = m_pic.F[i].N[0];
-			temp(1) = m_pic.F[i].N[1];
-			temp(2) = m_pic.F[i].N[2];
+			temp(0) = m_pic.VN[m_pic.F[i].N[0]].NX ;
+			temp(1) = m_pic.VN[m_pic.F[i].N[0]].NY;
+			temp(2) = m_pic.VN[m_pic.F[i].N[0]].NZ;
 			normal.row(i) = temp;//赋值法向矩阵 vector赋值矩阵的一行
 		}
 	}
@@ -49,7 +49,8 @@ CKirchhoff::CKirchhoff(PIC m_pic)
 }
 MatrixXd CKirchhoff::computeKF(double offset){
 	MatrixXd K(6, 6);
-	MatrixXd S = face_center() - offset * normal;
+	MatrixXd C = face_center();
+	MatrixXd S = C - offset * normal;
 	MatrixXd M = solid_angle(S);
 	MatrixXd FL = motion_flux();
 	MatrixXd sigma(numFaces, 6);
@@ -58,7 +59,6 @@ MatrixXd CKirchhoff::computeKF(double offset){
 		sigma.col(i) = M.colPivHouseholderQr().solve(FL.col(i));//sigma=strength NAN!
 	}
 	//MatrixXd sigma = division(MF, M);
-	MatrixXd C = face_center();
 	MatrixXd SL = single_layer(S ,C);//inf！
 	MatrixXd phi = SL* sigma;// numFaces * SL * sigma;
 	MatrixXd Q = one_point_quadrature();
@@ -292,11 +292,11 @@ MatrixXd CKirchhoff::computeKB() {
 	return inertia;
 }
 CVector6D CKirchhoff::computeK(){
-	MatrixXd KF = computeKF(0.4);//offest
 	MatrixXd KB = computeKB();//mass
-	MatrixXd temp1 = KF.rowwise().sum();
-	MatrixXd temp2 = KB.rowwise().sum();
-	temp1 = temp1 + temp2;
+	//MatrixXd KF = computeKF(0.4);//offest
+	MatrixXd temp1 = KB.rowwise().sum();
+	//MatrixXd temp2 = KF.rowwise().sum();
+	//temp1 = temp1 + temp2;
 	double a = temp1(0, 0);
 	double b = temp1(1, 0);
 	double c = temp1(2, 0);

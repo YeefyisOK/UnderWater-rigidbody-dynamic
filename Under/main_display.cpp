@@ -1,7 +1,7 @@
 #include<windows.h>
 #include<iostream>
 #include<sstream> 
-#include<gl/glut.h>
+#include<GL/glut.h>
 #include<stdio.h>
 #include"main_display.h"
 #include"Quaternion.h"
@@ -28,8 +28,8 @@ GLfloat windowWidth;
 GLfloat windowHeight;
 
 //需要已知的7+1个量
-double omega[3] = { 1, 0, 0 };
-double velocity[3] ={0, 0, -1};
+double omega[3] = { 0, 0, 1 };
+double velocity[3] ={0, -1,0 };
 double y[3] = { 0, 0, 0 };
 double t[3] = { 0, 0, 0 };
 double f[3] = { 0, -9.8f, 0 };
@@ -131,6 +131,34 @@ void ReadPIC()
 }
 void GLDraw()
 {
+	GLfloat ambient[] = { 0.3f, 0.3f, 0.3f, 1.0f };  // 环境强度
+	GLfloat diffuse[] = { 1.0f, 1.0f, 1.0f, 1.0f };  // 散射强度
+	GLfloat specular[] = { 1.0f, 1.0f, 1.0f, 1.0f }; // 镜面强度
+													 // 平行光源, GL_POSITION属性的最后一个参数为0
+	GLfloat direction[] = { -3.0f, -3.4f, -8.8f, 0.0f };
+	glLightfv(GL_LIGHT0, GL_POSITION, direction);
+	glLightfv(GL_LIGHT0, GL_AMBIENT, ambient);
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse);
+	glLightfv(GL_LIGHT0, GL_SPECULAR, specular);
+
+	glShadeModel(GL_SMOOTH);//中多边形内部各点的光照采用双线性插值的方法得到
+	//设置多边形材质
+	GLfloat mat_ambient[] = { 0.7, 0.7, 0.7, 1.0 };
+	GLfloat mat_diffuse[] = { 0.1, 0.5, 0.8, 1.0 };
+	GLfloat mat_specular[] = { 1.0, 1.0, 1.0, 1.0 };
+	GLfloat no_mat[] = { 0.0, 0.0, 0.0, 1.0 };
+	GLfloat shininess = 50.0f;
+
+	glMaterialfv(GL_FRONT, GL_AMBIENT, mat_ambient);
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse);
+	glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
+	glMaterialfv(GL_FRONT, GL_EMISSION, no_mat);
+	glMaterialf(GL_FRONT, GL_SHININESS, shininess);
+
+	//使能GL_COLOR_MATERIAL，而后利用glColorMaterial()函数指明glColor*()函数将影响到的材质属性
+	glEnable(GL_COLOR_MATERIAL);
+	glColorMaterial(GL_FRONT, GL_DIFFUSE);
+	
 	for (int i = 0; i<m_pic.F.size(); i++)
 	{
 		glBegin(GL_TRIANGLE_FAN);                            // 绘制三角形GL_TRIANGLES;GL_LINE_LOOP;GL_LINES;GL_POINTS
@@ -145,7 +173,10 @@ void GLDraw()
 		if (m_pic.VT.size() != 0)glTexCoord2f(m_pic.VT[m_pic.F[i].T[2]].TU, m_pic.VT[m_pic.F[i].T[2]].TV);  //纹理
 		if (m_pic.VN.size() != 0)glNormal3f(m_pic.VN[m_pic.F[i].N[2]].NX, m_pic.VN[m_pic.F[i].N[2]].NY, m_pic.VN[m_pic.F[i].N[2]].NZ);//法向量
 		glVertex3f(m_pic.V[m_pic.F[i].V[2]].X , m_pic.V[m_pic.F[i].V[2]].Y , m_pic.V[m_pic.F[i].V[2]].Z );        // 右下
-		glEnd();// 三角形绘制结束    
+		glEnd();
+
+		glColor3f(0.0, 1.0, 0.0);     
+		// 三角形绘制结束    
 		/*if(m_pic.VN.size()!=0){
 		glBegin(GL_LINES);                            // 绘制三角形
 		glVertex3f(m_pic.V[m_pic.F[i].V[0]].X/YU,m_pic.V[m_pic.F[i].V[0]].Y/YU, m_pic.V[m_pic.F[i].V[0]].Z/YU);        // 上顶点
@@ -174,19 +205,43 @@ void init() {
 	//基尔霍夫张量
 	CKirchhoff m_K(m_pic);
 	K = m_K.computeK();
-	cout << "K0" << K.getData1().getm_data(0);
-	cout << "K1" << K.getData1().getm_data(1);
-	cout << "K2" << K.getData1().getm_data(2);
+	cout << "K零：" << K.getData1().getm_data(0);
+	cout << "K一：" << K.getData1().getm_data(1);
+	cout << "K二：" << K.getData1().getm_data(2);
 
-	cout << "K3" << K.getData2().getm_data(0);
-	cout << "K4" << K.getData2().getm_data(1);
-	cout << "K5" << K.getData2().getm_data(2);
+	cout << "K三：" << K.getData2().getm_data(0);
+	cout << "K四：" << K.getData2().getm_data(1);
+	cout << "K五：" << K.getData2().getm_data(2);
 	//glClearColor(0.0, 0.0, 0.0, 1.0);           //设置背景颜色  
 	glClearColor(0.75f, 0.75f, 0.75f, 0.0f);
 	//深度测试的相关设置 
 	glClearDepth(1.0);                    //设置深度缓存的初始值 
 	glDepthFunc(GL_LEQUAL);           //深度测试的方法 
 	glEnable(GL_DEPTH_TEST);          //启用深度测试
+	//光照
+//材质反光性设置
+	GLfloat mat_specular[] = { 1.0, 1.0, 1.0, 1.0 };  //镜面反射参数
+	GLfloat mat_shininess[] = { 50.0 };               //高光指数
+	GLfloat light_position[] = { 1.0, 1.0, 1.0, 0.0 };
+	GLfloat white_light[] = { 1.0, 1.0, 1.0, 1.0 };   //灯位置(1,1,1), 最后1-开关
+	GLfloat Light_Model_Ambient[] = { 0.2, 0.2, 0.2, 1.0 }; //环境光参数
+
+	glClearColor(0.0, 0.0, 0.0, 0.0);  //背景色
+	glShadeModel(GL_SMOOTH);           //多变性填充模式
+
+	//材质属性
+	glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
+	glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
+
+	//灯光设置
+	glLightfv(GL_LIGHT0, GL_POSITION, light_position);
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, white_light);   //散射光属性
+	glLightfv(GL_LIGHT0, GL_SPECULAR, white_light);  //镜面反射光
+	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, Light_Model_Ambient);  //环境光参数
+
+	glEnable(GL_LIGHTING);   //开关:使用光
+	glEnable(GL_LIGHT0);     //打开0#灯
+	glEnable(GL_DEPTH_TEST); //打开深度测试
 
 }
 //窗口重绘时的响应函数 
@@ -269,7 +324,7 @@ void drawScene()           //绘制
 	//glTranslated(m_translate[0], m_translate[1], m_translate[2]);
 	glTranslated(temp_deltay[0], temp_deltay[1], temp_deltay[2]);
 	glRotated(q.get_w(), q.get_x(), q.get_y(), q.get_z());
-	glColor3f(0.0, 1.0, 0.0);     // Set current color to green 
+	glColor3f(0.0, 1.0, 0.0);     //绿
 	GLDraw();
 	//DrawCylinder(1,2, 32);
 	//glutSolidCube(3);
@@ -285,7 +340,7 @@ void reshape(int width, int height) {
 	//glOrtho(-5, 5, -5, 5, -10, 10);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
-	gluLookAt(12, 0, -2, 0, 0, -2, 0, 0, 1);
+	gluLookAt(16, 0, -2, 0, 0, -2, 0, 0, 1);
 }
 
 //矩阵转化为四元数，四元数乘以时间后，变回矩阵
@@ -302,7 +357,7 @@ void TimerFunction(int value)
 {
 	//中间量
 	m_R_ = m_R%m_DaOmega;
-	p_y_ = p_y*v_velocity;
+	p_y_ = m_R *v_velocity;
 	v_l = K.getData1() *v_omega;
 	v_p = K.getData2() *v_velocity;
 	v_l_ = v_l*v_omega += v_p*v_velocity += v_t;
@@ -315,7 +370,7 @@ void TimerFunction(int value)
 	m_R = m_R%temp_deltaR;
 	temp_deltay.setData(p_y_[0] * delta_t, p_y_[1] * delta_t, p_y_[2] * delta_t);
 	p_y += temp_deltay;
-	cout << "temp_deltay是" << temp_deltay.getm_data(0);
+	cout << "位置是";
 	CVector3D temp_deltaL(v_l_[0] * delta_t, v_l_[1] * delta_t, v_l_[2] * delta_t);
 	v_l += temp_deltaL;
 	CVector3D temp_deltap(v_p_[0] * delta_t, v_p_[1] * delta_t, v_p_[2] * delta_t);
