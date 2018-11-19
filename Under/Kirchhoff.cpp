@@ -291,22 +291,27 @@ MatrixXd CKirchhoff::comuputeJ() {
 	inertia(0, 2) = inertia(2, 0) = -(intg[9] - mass*cm.getm_data(2)*cm.getm_data(0));
 	return inertia;
 }
-CVector6D CKirchhoff::computeKB(double m) {
-	MatrixXd J=comuputeJ();
-	MatrixXd temp1 = J.rowwise().sum();
-	CVector6D res(temp1(0,0), temp1(1, 0), temp1(2, 0),m,m,m);
+MatrixXd CKirchhoff::computeKB(double m) {
+	MatrixXd res(6, 6);
+	res.setZero(6, 6);
+	MatrixXd J = comuputeJ();
+	res.block(0, 0, 3, 3) = J;
+	Matrix3d identity;
+	identity.setIdentity(3, 3);
+	res.block(3, 3, 3, 3) = m*identity;//±Í¡ø≥À“‘æÿ’Û
 	return res;
 }
-CVector6D CKirchhoff::computeK(){
-	CVector6D KB = computeKB(5.0f);//mass
+MatrixXd CKirchhoff::computeK(){
+	MatrixXd KB = computeKB(5.0f);//mass
 	//MatrixXd KF = computeKF(0.4);//offest
 	//MatrixXd temp = KF.rowwise().sum();
+	/*
 	double a = KB[0]; //temp(0, 0);
 	double b = KB[1];//temp(1, 0);
 	double c = KB[2];//temp(2, 0);
 	double d = KB[3];//temp(3, 0);
 	double e = KB[4];//temp(4, 0);
-	double f = KB[5];//temp(5, 0);
-	CVector6D Kirchhoff(a,b,c,d,e,f);
+	double f = KB[5];//temp(5, 0);*/
+	MatrixXd Kirchhoff = KB;//+KF
 	return Kirchhoff;
 }

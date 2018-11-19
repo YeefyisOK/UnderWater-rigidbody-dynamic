@@ -3,10 +3,9 @@
 #include<sstream> 
 #include<GL/glut.h>
 #include<stdio.h>
-#include"main_display.h"
-#include"Quaternion.h"
 #include"Kirchhoff.h"
 #include "PIC.h"
+#include"DynamicFormula.h"
 #include <fstream>
 #include<iostream>
 using namespace std;
@@ -21,49 +20,27 @@ using namespace std;
 string name = "H:\\MeshData\\cube.obj";
 PIC m_pic;
 
-CMatrix toDaOmega(CVector3D omega);
 void drawScene();
 //窗口的大小
 GLfloat windowWidth;
 GLfloat windowHeight;
-
-//需要已知的7+1个量
-double omega[3] = { 0, 1, 1 };
-double velocity[3] ={0, 0, 0 };
-double y[3] = { 0, 0, 0 };
-double ts[3] = { 0, 0, 0 };
-double fs[3] = { 0, -9.8f, 0 };
-CVector3D v_omega(omega);
-CVector3D v_velocity(velocity);
-CMatrix m_DaOmega=toDaOmega(v_omega);//Ω
-CMatrix m_R;
-CPoint3D p_y(0,0,0);//y
-CVector3D v_ts(0,0,0);//ts
-CVector3D v_fs(0,-10.0f,0);//fs
-
-CVector6D K(0,0,0,0,0,0);
 /*
-//基尔霍夫张量
-CKirchhoff m_K(m_pic);
-CVector6D K = m_K.computeK();
-*/
-
-//中间量
-CMatrix m_R_ ;
-CPoint3D p_y_(0,0,0);
-CVector3D v_l(0, 0, 0);
-CVector3D v_p(0, 0, 0);
-CVector3D v_l_(0, 0, 0);
-CVector3D v_p_(0, 0, 0);
-CVector3D v_t(0, 0, 0);
-CVector3D v_f(0, 0, 0);
-
-
 //偏移量 旋转量
 CVector3D temp_deltay(0,0,0);
-CQuaternion q(0, 0, 0, 0);
+CQuaternion q(0, 0, 0, 0);*/
+Vector3d omega(0,1,0);
+Vector3d velocity(0, -1, 0);
+Matrix3d R = Matrix3d::Identity();
 
-double delta_t = 0.5;
+Vector3d y(0,0,0);
+Vector3d ts(0,0,0);
+Vector3d fs(0,-10,0);
+MatrixXd K;
+double delta_t=0.5;
+
+DynamicFormula m_DF(omega,velocity,R,y,ts,fs,K,delta_t);
+
+//double delta_t = 0.5;
 void ReadPIC()
 {
 	ifstream ifs(name);//cube bunny Eight
@@ -188,60 +165,12 @@ void GLDraw()
 		}*/
 	}
 }
-CMatrix toDaOmega(CVector3D omega){//w->Ω
-	CMatrix res;
-	res[0][0] = 0;
-	res[0][1] = -omega[2];
-	res[0][2] = omega[1];
-	res[1][0] = omega[2];
-	res[1][1] = 0;
-	res[1][2] = -omega[0];
-	res[2][0] = -omega[1];
-	res[2][1] = omega[0];
-	res[2][2] = 0;
-	return res;
-}
-CVector6D ts2t(CMatrix R, CMatrix Y,CVector3D ts,CVector3D fs) {
-	Matrix3d r;
-	Matrix3d y;
-	for (int i = 0;i < 3;i++) {
-		for (int j = 0;j < 3;j++) {
-			r(i, j) = R[i][j];
-			y(i, j) = Y[i][j];
-		}
-	}
-	Matrix3d rt = r.transpose();
-	Matrix3d zero;
-	zero.setZero(3, 3);
-	Matrix3d negRty = zero-rt * y;
-	MatrixXd trans(6, 6);
-	trans.block(0, 0, 3, 3) = rt;
-	trans.block(0, 3, 3, 3) = negRty;
-	trans.block(3, 0, 3, 3) = zero;
-	trans.block(3, 3, 3, 3) = rt;
-	VectorXd tsfs(6);
-	tsfs(0) = ts[0];
-	tsfs(1) = ts[1];
-	tsfs(2) = ts[2];
-	tsfs(3) = fs[0];
-	tsfs(4) = fs[1];
-	tsfs(5) = fs[2];
-	VectorXd resV = trans * tsfs;
-	CVector6D resC(resV(0), resV(1), resV(2), resV(3), resV(4), resV(5));
-	return resC;
-}
 void init() {
 	ReadPIC();
 	//基尔霍夫张量
 	CKirchhoff m_K(m_pic);
-	K = m_K.computeK();
-	cout << "K零：" << K.getData1().getm_data(0) << endl;
-	cout << "K一：" << K.getData1().getm_data(1) << endl;
-	cout << "K二：" << K.getData1().getm_data(2) << endl;
-
-	cout << "K三：" << K.getData2().getm_data(0) << endl;
-	cout << "K四：" << K.getData2().getm_data(1) << endl;
-	cout << "K五：" << K.getData2().getm_data(2) << endl;
+	K = m_K.computeK();//初始时得到K矩阵
+	m_DF.setK(K);
 	//glClearColor(0.0, 0.0, 0.0, 1.0);           //设置背景颜色  
 	glClearColor(0.75f, 0.75f, 0.75f, 0.0f);
 	//深度测试的相关设置 
@@ -350,10 +279,11 @@ void DrawCylinder(double r, double h, int nSlice)
 }
 void drawScene()           //绘制
 {
+	
 	//glRotated()
 	//glTranslated(m_translate[0], m_translate[1], m_translate[2]);
-	glTranslated(temp_deltay[0], temp_deltay[1], temp_deltay[2]);
-	glRotated(q.get_w(), q.get_x(), q.get_y(), q.get_z());
+	glTranslated(m_DF.temp_deltay(0), m_DF.temp_deltay(1), m_DF.temp_deltay(2));
+	glRotated(m_DF.q.w(), m_DF.q.x(), m_DF.q.y(), m_DF.q.z());
 	glColor3f(0.0, 1.0, 0.0);     //绿
 	GLDraw();
 	//DrawCylinder(1,2, 32);
@@ -385,45 +315,7 @@ CMatrix toMat(CMatrix R_){
 
 void TimerFunction(int value)
 {
-	//中间量
-	CMatrix m_Y = toDaOmega(p_y);
-	CVector6D temp = ts2t(m_R, m_Y, v_ts, v_fs);
-	v_t = temp.getData1();
-	v_f = temp.getData2();//把ts fs转化为t f
-
-	m_DaOmega = toDaOmega(v_omega);
-	m_R_ = m_R %m_DaOmega;
-	p_y_ = m_R *v_velocity;
-	v_l = K.getData1() *v_omega;
-	v_p = K.getData2() *v_velocity;
-
-	v_l_ = v_l*v_omega += v_p*v_velocity += v_t;
-	v_p_ = v_p*v_omega += v_f;
-
-	CMatrix RotateMat = toMat(m_R_);//没有用
-
-	//求解下一时刻的7个量
-	CMatrix temp_deltaR = toMat(m_R_);
-	m_R = m_R%temp_deltaR;
-	temp_deltay.setData(p_y_[0] * delta_t, p_y_[1] * delta_t, p_y_[2] * delta_t);
-	p_y += temp_deltay;
-	cout << "位置是:(" << p_y.getm_data(0) << "," << p_y.getm_data(1) << "," << p_y.getm_data(2) << ")"<<endl;
-	CVector3D temp_deltaL(v_l_[0] * delta_t, v_l_[1] * delta_t, v_l_[2] * delta_t);
-	v_l += temp_deltaL;
-	CVector3D temp_deltap(v_p_[0] * delta_t, v_p_[1] * delta_t, v_p_[2] * delta_t);
-	v_p += temp_deltap;
-	v_omega = v_l /= K.getData1();
-	v_velocity = v_p /= K.getData2();
-	q.FromRotationMatrix(m_R_);
-	q.setomega(q.get_w()*delta_t);
-	/*
-	//计算物体变化位置方向
-	glTranslated(temp_deltay[0], temp_deltay[1], temp_deltay[2]);
-	CQuaternion q;
-	q.FromRotationMatrix(m_R_);
-	q.setomega(q.get_w()*delta_t);
-
-	glRotated(q.get_w(), q.get_x(), q.get_y(), q.get_z());*/
+	m_DF.nextTime();
 	/*
 	glutPostRedisplay 标记当前窗口需要重新绘制。通过glutMainLoop下一次循环时，
 	窗口显示将被回调以重新显示窗口的正常面板。多次调用glutPostRedisplay，

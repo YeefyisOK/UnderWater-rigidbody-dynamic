@@ -42,6 +42,9 @@
     <ClCompile Include="Kirchhoff.cpp">
       <Filter>dynamics</Filter>
     </ClCompile>
+    <ClCompile Include="DynamicFormula.cpp">
+      <Filter>dynamics</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="PIC.h">
@@ -62,10 +65,10 @@
     <ClInclude Include="Vector6D.h">
       <Filter>datastructure</Filter>
     </ClInclude>
-    <ClInclude Include="main_display.h">
-      <Filter>drawing</Filter>
-    </ClInclude>
     <ClInclude Include="Kirchhoff.h">
+      <Filter>dynamics</Filter>
+    </ClInclude>
+    <ClInclude Include="DynamicFormula.h">
       <Filter>dynamics</Filter>
     </ClInclude>
   </ItemGroup>
