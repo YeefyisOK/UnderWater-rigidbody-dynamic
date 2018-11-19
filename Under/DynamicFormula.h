@@ -5,6 +5,8 @@
 #include <Eigen/QR>  
 #include <Eigen/SVD>  
 #include"Quaternion.h"
+#include <iostream>
+using namespace std;
 using namespace Eigen;
 class DynamicFormula
 {
@@ -18,7 +20,7 @@ public:
 	Matrix3d toDaOmegaOrY(Vector3d omega);
 	VectorXd tsfs2tf(Matrix3d R, Matrix3d Y, Vector3d ts, Vector3d fs);
 	Matrix3d computeR_();
-	Matrix3d computey_();
+	Vector3d computey_();
 	VectorXd computelp();
 
 	VectorXd computelp_(VectorXd lp);
@@ -47,20 +49,3 @@ public:
 	Vector3d temp_deltay;
 
 };
-
-DynamicFormula::DynamicFormula(Vector3d omega, Vector3d velocity,Matrix3d R,
-	Vector3d y, Vector3d ts, Vector3d fs,MatrixXd K,double delta_t)
-{
-	this->w= omega;
-	this->v= velocity;
-	this->R	=R; //R如何初始化
-	this->y=y;
-	this->ts=ts;
-	this->fs = fs;
-	this->K = K;
-	this->delta_t = delta_t;
-}
-
-DynamicFormula::~DynamicFormula()
-{
-}

@@ -278,8 +278,7 @@ void DrawCylinder(double r, double h, int nSlice)
 	glEnd();
 }
 void drawScene()           //绘制
-{
-	
+{	
 	//glRotated()
 	//glTranslated(m_translate[0], m_translate[1], m_translate[2]);
 	glTranslated(m_DF.temp_deltay(0), m_DF.temp_deltay(1), m_DF.temp_deltay(2));
@@ -287,9 +286,8 @@ void drawScene()           //绘制
 	glColor3f(0.0, 1.0, 0.0);     //绿
 	GLDraw();
 	//DrawCylinder(1,2, 32);
-	//glutSolidCube(3);
-
-} //窗口大小发生变化时的响应函数 
+}
+//窗口大小发生变化时的响应函数 
 void reshape(int width, int height) {
 	glViewport(0, 0, width, height);      //设置视窗大小 
 	//设置视景体大小 
@@ -301,16 +299,6 @@ void reshape(int width, int height) {
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 	gluLookAt(4, 0, -2, 0, 0, -2, 0, 0, 1);
-}
-
-//矩阵转化为四元数，四元数乘以时间后，变回矩阵
-CMatrix toMat(CMatrix R_){
-	CMatrix res;
-	CQuaternion q;
-	q.FromRotationMatrix(R_);
-	q.setomega(q.get_w()*delta_t);
-	res=q.ToMatrix();
-	return res;
 }
 
 void TimerFunction(int value)
