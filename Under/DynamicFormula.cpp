@@ -30,13 +30,13 @@ Matrix3d DynamicFormula::toDaOmegaOrY(Vector3d omega) {
 	res(2, 2) = 0;
 	return res;
 }
-VectorXd DynamicFormula::tsfs2tf(Matrix3d R, Matrix3d Y, Vector3d ts, Vector3d fs){
+VectorXd DynamicFormula::tsfs2tf(Matrix3d R, Matrix3d Y){
 	Matrix3d Rt = R.transpose();
 	Matrix3d zero=Matrix3d::Zero();
 	//zero.setZero(3, 3);
-	Matrix3d negRtY =  zero- Rt * Y;//????
+	Matrix3d negRtY =  zero- Rt * Y;
 	MatrixXd trans(6, 6);//矩阵分块赋值
-	trans.block(0, 0, 3, 3) = Rt.block(0,0,3,3);
+	trans.block(0, 0, 3, 3) = Rt.block(0, 0, 3, 3);
 	trans.block(0, 3, 3, 3) = negRtY.block(0, 0, 3, 3);
 	trans.block(3, 0, 3, 3) = zero.block(0, 0, 3, 3);
 	trans.block(3, 3, 3, 3) = Rt.block(0, 0, 3, 3);
@@ -67,7 +67,7 @@ VectorXd DynamicFormula::computelp() {
 }
 VectorXd DynamicFormula::computelp_(VectorXd lp) {
 	Matrix3d Y = toDaOmegaOrY(y);
-	VectorXd tf= tsfs2tf(R, Y,ts, fs);
+	VectorXd tf= tsfs2tf(R, Y);
 	Vector3d l = vec62Vec31(lp);
 	Vector3d p = vec62Vec32(lp);
 	Vector3d a = l.cross(w) + p.cross(v);
@@ -78,15 +78,24 @@ VectorXd DynamicFormula::computelp_(VectorXd lp) {
 	return ab + tf;
 }
 void DynamicFormula::computeNextR(Matrix3d R_) {
-	q = R_;//直接可以赋值
-	Quaterniond newq(q.w()* delta_t, q.x(), q.y(), q.z());
-	Matrix3d temp = newq.matrix();
-	R= R * temp;
+	Quaterniond tempq(R_);//直接可以赋值
+	Quaterniond newq(tempq.w()* delta_t, tempq.x(), tempq.y(), tempq.z());
+	q=newq;
+	Quaterniond qR(R);
+	qR = qR * newq;
+	R = qR.matrix();
+	//Matrix3d temp = newq.matrix();
+	//R= R * temp;
+	
+	cout << "R的第一行是(" << R(0, 0) << "," << R(0, 1) << "," << R(0, 2) << ")" << endl;
+	cout << "R的第二行是(" << R(1, 0) << "," << R(1, 1) << "," << R(1, 2) << ")" << endl;
+	cout << "R的第三行是(" << R(2, 0) << "," << R(2, 1) << "," << R(2, 2) << ")" << endl;
+
 }
 void DynamicFormula::computeNexty( Vector3d y_) {
 	temp_deltay = delta_t * y_;
 	y= y + temp_deltay;
-	cout << "(" << y(0) << "," << y(1) << "," << y(2) << ")" << endl;
+	//cout << "(" << y(0) << "," << y(1) << "," << y(2) << ")" << endl;
 }
 VectorXd DynamicFormula::computeNextlp(VectorXd lp, VectorXd lp_) {
 	return lp + delta_t * lp_;

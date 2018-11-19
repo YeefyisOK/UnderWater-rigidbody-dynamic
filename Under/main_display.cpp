@@ -28,13 +28,13 @@ GLfloat windowHeight;
 //偏移量 旋转量
 CVector3D temp_deltay(0,0,0);
 CQuaternion q(0, 0, 0, 0);*/
-Vector3d omega(0,1,0);
-Vector3d velocity(0, -1, 0);
+Vector3d omega(0,10,0);
+Vector3d velocity(0, 0, 0);
 Matrix3d R = Matrix3d::Identity();
 
 Vector3d y(0,0,0);
 Vector3d ts(0,0,0);
-Vector3d fs(0,-10,0);
+Vector3d fs(0,0,0);
 MatrixXd K;
 double delta_t=0.5;
 
@@ -181,7 +181,7 @@ void init() {
 //材质反光性设置
 	GLfloat mat_specular[] = { 1.0, 1.0, 1.0, 1.0 };  //镜面反射参数
 	GLfloat mat_shininess[] = { 50.0 };               //高光指数
-	GLfloat light_position[] = { 1.0, 1.0, 1.0, 0.0 };
+	GLfloat light_position[] = { 10.0, 1.0, 1.0, 0.0 };
 	GLfloat white_light[] = { 1.0, 1.0, 1.0, 1.0 };   //灯位置(1,1,1), 最后1-开关
 	GLfloat Light_Model_Ambient[] = { 0.2, 0.2, 0.2, 1.0 }; //环境光参数
 
@@ -298,12 +298,13 @@ void reshape(int width, int height) {
 	glOrtho(-5, 5, -5, 5, -10, 10);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
-	gluLookAt(4, 0, -2, 0, 0, -2, 0, 0, 1);
+	gluLookAt(4, 0, -2, 0, 0, 0, 0, 0, 1);
 }
 
 void TimerFunction(int value)
 {
 	m_DF.nextTime();
+	//设置tsfs 即下一时刻的受力情况
 	/*
 	glutPostRedisplay 标记当前窗口需要重新绘制。通过glutMainLoop下一次循环时，
 	窗口显示将被回调以重新显示窗口的正常面板。多次调用glutPostRedisplay，

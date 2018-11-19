@@ -219,8 +219,6 @@ MatrixXd CKirchhoff::solid_angle(MatrixXd src){//numPoints*3
 	}
 	return res;
 }
-
-
 void CKirchhoff::Subexpressions(double &w0, double &w1, double &w2, double &f1, double &f2, double &f3, double &g0, double &g1, double &g2) {
 	double temp0 = w0 + w1;
 	f1 = temp0 + w2;
@@ -234,9 +232,9 @@ void CKirchhoff::Subexpressions(double &w0, double &w1, double &w2, double &f1, 
 }
 MatrixXd CKirchhoff::comuputeJ() {
 	double mass = 0;
-	CPoint3D cm(0, 0, 0);
 	MatrixXd inertia(3, 3);
-	const double mult[10] = { 1 / 6, 1 / 24, 1 / 24, 1 / 24, 1 / 60, 1 / 60, 1 / 60, 1 / 120, 1 / 120, 1 / 120 };
+	const double mult[10] = { 1.0 / 6, 1.0 / 24, 1.0 / 24, 1.0 / 24, 
+		1.0 / 60, 1.0 / 60, 1.0 / 60, 1.0 / 120, 1.0 / 120, 1.0 / 120 };
 	double intg[10] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // order: 1, x, y, z, x^2, y^2, z^2, xy, yz, zx 
 	for (int t = 0; t < numFaces; t++) { // get vertices of triangle t 
 		/*
@@ -271,24 +269,25 @@ MatrixXd CKirchhoff::comuputeJ() {
 		Subexpressions(y0, y1, y2, f1y, f2y, f3y, g0y, g1y, g2y);
 		Subexpressions(z0, z1, z2, f1z, f2z, f3z, g0z, g1z, g2z);
 		// update integrals 
-		//const double mult[10] = { 1 / 6, 1 / 24, 1 / 24, 1 / 24, 1 / 60, 1 / 60, 1 / 60, 1 / 120, 1 / 120, 1 / 120 };
-
-		intg[0] += d0*f1x / 6; intg[1] += d0*f2x / 24; intg[2] += d1*f2y / 24; intg[3] += d2*f2z / 24;
-		intg[4] += d0*f3x / 60; intg[5] += d1*f3y / 60; intg[6] += d2*f3z / 60;
-		intg[7] += d0*(y0*g0x + y1*g1x + y2*g2x) / 120; 
-		intg[8] += d1*(z0*g0y + z1*g1y + z2*g2y) / 120; 
-		intg[9] += d2*(x0*g0z + x1*g1z + x2*g2z) / 120;
+		intg[0] += d0*f1x ; intg[1] += d0*f2x ; intg[2] += d1*f2y ; intg[3] += d2*f2z ;
+		intg[4] += d0*f3x ; intg[5] += d1*f3y ; intg[6] += d2*f3z ;
+		intg[7] += d0*(y0*g0x + y1*g1x + y2*g2x) ; 
+		intg[8] += d1*(z0*g0y + z1*g1y + z2*g2y) ; 
+		intg[9] += d2*(x0*g0z + x1*g1z + x2*g2z) ;
+	}
+	for (int i = 0;i < 10;i++) {
+		intg[i] *= mult[i];
 	}
 	mass = intg[0];
 	// 质心
-	cm.setData(intg[1] / mass, intg[2] / mass, intg[3] / mass);
+	Vector3d cm(intg[1] / mass, intg[2] / mass, intg[3] / mass);
 	// 相对于质心的惯性张量
-	inertia(0, 0) = intg[5] + intg[6] - mass*(cm.getm_data(1)*cm.getm_data(1) + cm.getm_data(2)*cm.getm_data(2));
-	inertia(1, 1) = intg[4] + intg[6] - mass*(cm.getm_data(2)*cm.getm_data(2) + cm.getm_data(0)*cm.getm_data(0));
-	inertia(2, 2) = intg[4] + intg[5] - mass*(cm.getm_data(0)*cm.getm_data(0) + cm.getm_data(1)*cm.getm_data(1));
-	inertia(0, 1) = inertia(1, 0) = -(intg[7] - mass*cm.getm_data(0)*cm.getm_data(1));
-	inertia(1, 2) = inertia(2, 1) = -(intg[8] - mass*cm.getm_data(1)*cm.getm_data(2));
-	inertia(0, 2) = inertia(2, 0) = -(intg[9] - mass*cm.getm_data(2)*cm.getm_data(0));
+	inertia(0, 0) = intg[5] + intg[6] - mass*(cm(1)*cm(1) + cm(2)*cm(2));
+	inertia(1, 1) = intg[4] + intg[6] - mass*(cm(2)*cm(2) + cm(0)*cm(0));
+	inertia(2, 2) = intg[4] + intg[5] - mass*(cm(0)*cm(0) + cm(1)*cm(1));
+	inertia(0, 1) = inertia(1, 0) = -(intg[7] - mass*cm(0)*cm(1));
+	inertia(1, 2) = inertia(2, 1) = -(intg[8] - mass*cm(1)*cm(2));
+	inertia(0, 2) = inertia(2, 0) = -(intg[9] - mass*cm(2)*cm(0));
 	return inertia;
 }
 MatrixXd CKirchhoff::computeKB(double m) {
@@ -312,6 +311,8 @@ MatrixXd CKirchhoff::computeK(){
 	double d = KB[3];//temp(3, 0);
 	double e = KB[4];//temp(4, 0);
 	double f = KB[5];//temp(5, 0);*/
+	KB.setIdentity();//先用单位阵试试
+
 	MatrixXd Kirchhoff = KB;//+KF
 	return Kirchhoff;
 }

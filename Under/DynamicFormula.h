@@ -18,7 +18,7 @@ public:
 		K = newK;
 	}
 	Matrix3d toDaOmegaOrY(Vector3d omega);
-	VectorXd tsfs2tf(Matrix3d R, Matrix3d Y, Vector3d ts, Vector3d fs);
+	VectorXd tsfs2tf(Matrix3d R, Matrix3d Y);
 	Matrix3d computeR_();
 	Vector3d computey_();
 	VectorXd computelp();
