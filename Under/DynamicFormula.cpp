@@ -78,18 +78,22 @@ VectorXd DynamicFormula::computelp_(VectorXd lp) {
 	return ab + tf;
 }
 void DynamicFormula::computeNextR(Matrix3d R_) {
-	Quaterniond tempq(R_);//直接可以赋值
-	Quaterniond newq(tempq.w()* delta_t, tempq.x(), tempq.y(), tempq.z());
-	q=newq;
-	Quaterniond qR(R);
-	qR = qR * newq;
-	R = qR.matrix();
+	Quaterniond q_(R_);//也可以直接赋值
+	Quaterniond delta_q(q_.w()* delta_t, q_.x(), q_.y(), q_.z());
+	//= delta_t * tempq 
+	delta_q.normalize();
+	q = delta_q;
+	Quaterniond q_old(R);
+	Quaterniond q_new = delta_q * q_old;
+	q_new.normalize();
+	R = q_new.toRotationMatrix();
 	//Matrix3d temp = newq.matrix();
 	//R= R * temp;
 	
 	cout << "R的第一行是(" << R(0, 0) << "," << R(0, 1) << "," << R(0, 2) << ")" << endl;
 	cout << "R的第二行是(" << R(1, 0) << "," << R(1, 1) << "," << R(1, 2) << ")" << endl;
 	cout << "R的第三行是(" << R(2, 0) << "," << R(2, 1) << "," << R(2, 2) << ")" << endl;
+	cout << endl;
 
 }
 void DynamicFormula::computeNexty( Vector3d y_) {
