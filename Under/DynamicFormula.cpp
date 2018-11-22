@@ -1,6 +1,4 @@
 #include"DynamicFormula.h"
-
-
 DynamicFormula::DynamicFormula(Vector3d omega, Vector3d velocity, Matrix3d R,
 	Vector3d y, Vector3d ts, Vector3d fs, MatrixXd K, double delta_t)
 {
@@ -78,13 +76,25 @@ VectorXd DynamicFormula::computelp_(VectorXd lp) {
 	return ab + tf;
 }
 void DynamicFormula::computeNextR(Matrix3d R_) {
-	Quaterniond q_(R_);//也可以直接赋值
+	cout << "R_=" << R_ << endl;
+	cout << "R=" << R << endl;
+	AngleAxisd aaR_;
+	aaR_.fromRotationMatrix(R_);
+	Quaterniond q_(aaR_);//可以构造函数 也可以直接赋值！！！错的！
+	cout << "q_:" << q_.coeffs() << endl;
 	Quaterniond delta_q(q_.w()* delta_t, q_.x(), q_.y(), q_.z());
+	cout << "delta_q:" << delta_q.coeffs() << endl;
 	//= delta_t * tempq 
 	delta_q.normalize();
 	q = delta_q;
+	cout << "q:" << q.coeffs() << endl;
+	AngleAxisd aaR;
+	aaR.fromRotationMatrix(R);
 	Quaterniond q_old(R);
+	cout << "q_old:" << q_old.coeffs() << endl;
 	Quaterniond q_new = delta_q * q_old;
+
+	cout << "q_new:" << q_new.coeffs() << endl;
 	q_new.normalize();
 	R = q_new.toRotationMatrix();
 	//Matrix3d temp = newq.matrix();

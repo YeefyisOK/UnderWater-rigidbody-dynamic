@@ -4,7 +4,7 @@
 #include <Eigen/LU>  
 #include <Eigen/QR>  
 #include <Eigen/SVD>  
-#include"Quaternion.h"
+//#include"Quaternion.h"
 #include <iostream>
 using namespace std;
 using namespace Eigen;
@@ -16,6 +16,9 @@ public:
 	~DynamicFormula();
 	void setK(MatrixXd newK) {
 		K = newK;
+	}
+	void setR(Matrix3d newR) {
+		R = newR;
 	}
 	Matrix3d toDaOmegaOrY(Vector3d omega);
 	VectorXd tsfs2tf(Matrix3d R, Matrix3d Y);

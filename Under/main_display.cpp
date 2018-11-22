@@ -1,21 +1,20 @@
 #include<windows.h>
-#include<iostream>
+#include <fstream>
 #include<sstream> 
 #include<GL/glut.h>
 #include<stdio.h>
 #include"Kirchhoff.h"
 #include "PIC.h"
 #include"DynamicFormula.h"
-#include <fstream>
 #include<iostream>
 using namespace std;
+using namespace Eigen;
 /*
 定时器：glutTimerFunc(unsigned int millis, void (*func)(int value), int value);
 重绘标志：glutPosRedisplay();
 定时器第一个参数是每隔millis毫秒便调用func函数，并且创一个value参数进去
 因为一个定时器只被调用一次，所以需要多次调用定时器
 */
-
 //obj读取
 string name = "H:\\MeshData\\cube.obj";
 PIC m_pic;
@@ -28,10 +27,14 @@ GLfloat windowHeight;
 //偏移量 旋转量
 CVector3D temp_deltay(0,0,0);
 CQuaternion q(0, 0, 0, 0);*/
-Vector3d omega(0,10,0);
-Vector3d velocity(0, 0, 0);
-Matrix3d R = Matrix3d::Identity();
+Vector3d omega(0, 1, 0);
+Vector3d velocity(0, 0, 0);			
+Matrix3d R = Matrix3d::Identity();//设置为单位阵 在init()改不是单位阵
 
+/*
+R << 0, 1, 0,
+	1, 0, 0,
+	0, 0, 1;*/
 Vector3d y(0,0,0);
 Vector3d ts(0,0,0);
 Vector3d fs(0,0,0);
@@ -166,6 +169,11 @@ void GLDraw()
 	}
 }
 void init() {
+	/*
+	Vector3d temp = R.row(0);
+	R.row(0) = R.row(1);
+	R.row(1) = temp;
+	m_DF.setR(R);*/
 	ReadPIC();
 	//基尔霍夫张量
 	CKirchhoff m_K(m_pic);
@@ -298,7 +306,7 @@ void reshape(int width, int height) {
 	glOrtho(-5, 5, -5, 5, -10, 10);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
-	gluLookAt(4, 0, -2, 0, 0, 0, 0, 0, 1);
+	gluLookAt(4, -1, -2, 0, 0, 0, 0, 0, 1);//4, 0, -2,
 }
 
 void TimerFunction(int value)

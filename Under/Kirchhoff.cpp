@@ -230,12 +230,19 @@ void CKirchhoff::Subexpressions(double &w0, double &w1, double &w2, double &f1, 
 	g1 = f2 + w1*(f1 + w1);
 	g2 = f2 + w2*(f1 + w2);
 }
-MatrixXd CKirchhoff::comuputeJ() {
+Matrix3d CKirchhoff::comuputeJ() {
 	double mass = 0;
-	MatrixXd inertia(3, 3);
+	Matrix3d inertia;
 	const double mult[10] = { 1.0 / 6, 1.0 / 24, 1.0 / 24, 1.0 / 24, 
 		1.0 / 60, 1.0 / 60, 1.0 / 60, 1.0 / 120, 1.0 / 120, 1.0 / 120 };
 	double intg[10] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // order: 1, x, y, z, x^2, y^2, z^2, xy, yz, zx 
+
+	double f1x, f2x, f3x;
+	double f1y, f2y, f3y;
+	double f1z, f2z, f3z;
+	double g0x, g1x, g2x;
+	double g0y, g1y, g2y;
+	double g0z, g1z, g2z;
 	for (int t = 0; t < numFaces; t++) { // get vertices of triangle t 
 		/*
 		i0 = index[3*t]; 	i1 = index[3*t+1];		i2 = index[3*t+2];
@@ -259,17 +266,12 @@ MatrixXd CKirchhoff::comuputeJ() {
 		double a2 = x2 - x0; double b2 = y2 - y0; double c2 = z2 - z0;
 		double d0 = b1*c2 - b2*c1; double d1 = a2*c1 - a1*c2; double d2 = a1*b2 - a2*b1;
 		// compute integral terms
-		double f1x, f2x, f3x;
-		double f1y, f2y, f3y;
-		double f1z, f2z, f3z;
-		double g0x, g1x, g2x;
-		double g0y, g1y, g2y;
-		double g0z, g1z, g2z;
 		Subexpressions(x0, x1, x2, f1x, f2x, f3x, g0x, g1x, g2x);
 		Subexpressions(y0, y1, y2, f1y, f2y, f3y, g0y, g1y, g2y);
 		Subexpressions(z0, z1, z2, f1z, f2z, f3z, g0z, g1z, g2z);
 		// update integrals 
-		intg[0] += d0*f1x ; intg[1] += d0*f2x ; intg[2] += d1*f2y ; intg[3] += d2*f2z ;
+		intg[0] += d0*f1x ;
+		intg[1] += d0*f2x ; intg[2] += d1*f2y ; intg[3] += d2*f2z ;
 		intg[4] += d0*f3x ; intg[5] += d1*f3y ; intg[6] += d2*f3z ;
 		intg[7] += d0*(y0*g0x + y1*g1x + y2*g2x) ; 
 		intg[8] += d1*(z0*g0y + z1*g1y + z2*g2y) ; 
@@ -281,10 +283,10 @@ MatrixXd CKirchhoff::comuputeJ() {
 	mass = intg[0];
 	// 质心
 	Vector3d cm(intg[1] / mass, intg[2] / mass, intg[3] / mass);
-	// 相对于质心的惯性张量
-	inertia(0, 0) = intg[5] + intg[6] - mass*(cm(1)*cm(1) + cm(2)*cm(2));
-	inertia(1, 1) = intg[4] + intg[6] - mass*(cm(2)*cm(2) + cm(0)*cm(0));
-	inertia(2, 2) = intg[4] + intg[5] - mass*(cm(0)*cm(0) + cm(1)*cm(1));
+	// 相对于质心的惯性张量   0x 1y 2z
+	inertia(0, 0) = intg[5] + intg[6] - mass*(cm(1)*cm(1) + cm(2)*cm(2));//yz 12
+	inertia(1, 1) = intg[4] + intg[6] - mass*(cm(2)*cm(2) + cm(0)*cm(0));//zx 20
+	inertia(2, 2) = intg[4] + intg[5] - mass*(cm(0)*cm(0) + cm(1)*cm(1));//xy 01
 	inertia(0, 1) = inertia(1, 0) = -(intg[7] - mass*cm(0)*cm(1));
 	inertia(1, 2) = inertia(2, 1) = -(intg[8] - mass*cm(1)*cm(2));
 	inertia(0, 2) = inertia(2, 0) = -(intg[9] - mass*cm(2)*cm(0));
@@ -293,7 +295,7 @@ MatrixXd CKirchhoff::comuputeJ() {
 MatrixXd CKirchhoff::computeKB(double m) {
 	MatrixXd res(6, 6);
 	res.setZero(6, 6);
-	MatrixXd J = comuputeJ();
+	Matrix3d J = comuputeJ();
 	res.block(0, 0, 3, 3) = J;
 	Matrix3d identity;
 	identity.setIdentity(3, 3);
