@@ -27,8 +27,8 @@ GLfloat windowHeight;
 //偏移量 旋转量
 CVector3D temp_deltay(0,0,0);
 CQuaternion q(0, 0, 0, 0);*/
-Vector3d omega(0, 1, 0);
-Vector3d velocity(0, 0, 0);			
+Vector3d omega(0, 0, 10);
+Vector3d velocity(0, 0, -1);			
 Matrix3d R = Matrix3d::Identity();//设置为单位阵 在init()改不是单位阵
 
 /*
