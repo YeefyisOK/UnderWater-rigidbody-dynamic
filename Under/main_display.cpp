@@ -27,7 +27,7 @@ GLfloat windowHeight;
 //偏移量 旋转量
 CVector3D temp_deltay(0,0,0);
 CQuaternion q(0, 0, 0, 0);*/
-Vector3d omega(0, 0, 10);
+Vector3d omega(0, 0, 1);
 Vector3d velocity(0, 0, -1);			
 Matrix3d R = Matrix3d::Identity();//设置为单位阵 在init()改不是单位阵
 
@@ -39,11 +39,10 @@ Vector3d y(0,0,0);
 Vector3d ts(0,0,0);
 Vector3d fs(0,0,0);
 MatrixXd K;
-double delta_t=0.5;
+double delta_t=0.01;
 
 DynamicFormula m_DF(omega,velocity,R,y,ts,fs,K,delta_t);
 
-//double delta_t = 0.5;
 void ReadPIC()
 {
 	ifstream ifs(name);//cube bunny Eight
@@ -255,7 +254,7 @@ void TimerFunction(int value)
 	在下一个显示回调只产生单一的重新显示回调
 	*/
 	glutPostRedisplay(); //标志重新绘制
-	glutTimerFunc(1000, TimerFunction, 1);
+	glutTimerFunc(delta_t*1000, TimerFunction, 1);
 }
 
 int main(int argc, char* argv[]) {
@@ -274,7 +273,7 @@ int main(int argc, char* argv[]) {
 	glutReshapeFunc(reshape);              //设置窗口大小发生变化时的响应函数 
 
 	//定时器  每500毫秒触发一次
-	glutTimerFunc(500, TimerFunction, 1);
+	glutTimerFunc(delta_t*1000, TimerFunction, 1);
 
 	glutMainLoop();                   //消息循环：获取消息，分发消息，响应消息 
 	return 0;

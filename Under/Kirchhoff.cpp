@@ -50,28 +50,28 @@ CKirchhoff::CKirchhoff(PIC m_pic)
 MatrixXd CKirchhoff::computeKF(double offset){
 	MatrixXd KF(6, 6);
 	MatrixXd C = face_center();
-	//cout << "C=" << C << endl;
+	cout << "C=" << C << endl;
 	MatrixXd S = C - offset * normal;
-	//cout << "S=" << S << endl;
+	cout << "S=" << S << endl;
 	MatrixXd M = solid_angle(S);
-	//cout << "M=" << M << endl;
+	cout << "M=" << M << endl;
 	MatrixXd FL = motion_flux();
-	//cout << " FL=" << FL << endl;
+	cout << " FL=" << FL << endl;
 	MatrixXd sigma(numFaces, 6);
 	for (int i = 0; i< 6;i++) {
 
 		sigma.col(i) = M.colPivHouseholderQr().solve(FL.col(i));//sigma=strength NAN!
 	}
-	//cout << "sigma=" << sigma << endl;
+	cout << "sigma=" << sigma << endl;
 	//MatrixXd sigma = division(MF, M);
 	MatrixXd SL = single_layer(S ,C);//inf！
-	//cout << "SL=" << SL << endl;
+	cout << "SL=" << SL << endl;
 	MatrixXd phi = SL* sigma;// numFaces * SL * sigma;
-	//cout << "phi=" << phi << endl;
+	cout << "phi=" << phi << endl;
 	MatrixXd Q = one_point_quadrature();
-	//cout << "Q=" << Q << endl;
+	cout << "Q=" << Q << endl;
 	KF = Q*phi;
-	//cout << "KF=" << KF << endl;
+	cout << "KF=" << KF << endl;
 	return KF;
 }
 
@@ -323,8 +323,8 @@ MatrixXd CKirchhoff::computeK(){
 	double e = KB[4];//temp(4, 0);
 	double f = KB[5];//temp(5, 0);*/
 	//KB.setIdentity();//先用单位阵试试
-
 	cout << "KB:" << KB << endl;
 	MatrixXd Kirchhoff = KB+ KF;
+	cout << "Kirchhoff:" << Kirchhoff << endl;
 	return Kirchhoff;
 }
