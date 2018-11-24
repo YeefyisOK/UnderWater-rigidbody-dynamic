@@ -313,7 +313,6 @@ MatrixXd CKirchhoff::computeKB(double m) {
 }
 MatrixXd CKirchhoff::computeK(){
 	MatrixXd KB = computeKB(5.0f);//mass
-	cout << "KB:" << KB << endl;
 	MatrixXd KF = computeKF(0.4);//offest
 	//MatrixXd temp = KF.rowwise().sum();
 	/*
@@ -323,8 +322,9 @@ MatrixXd CKirchhoff::computeK(){
 	double d = KB[3];//temp(3, 0);
 	double e = KB[4];//temp(4, 0);
 	double f = KB[5];//temp(5, 0);*/
-	KB.setIdentity();//先用单位阵试试
+	//KB.setIdentity();//先用单位阵试试
 
+	cout << "KB:" << KB << endl;
 	MatrixXd Kirchhoff = KB+ KF;
 	return Kirchhoff;
 }
