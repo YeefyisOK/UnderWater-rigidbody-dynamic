@@ -233,6 +233,10 @@ MatrixXd CKirchhoff::solid_angle(MatrixXd src){//numPoints*3
 			Vector3d R1 = face[0].row(i) - src.row(j);
 			Vector3d R2 = face[1].row(i) - src.row(j);
 			Vector3d R3 = face[2].row(i) - src.row(j);
+			/*
+			cout << "R1=" << R1 << endl;
+			cout << "R2=" << R2 << endl;
+			cout << "R3=" << R3 << endl;*/
 			MatrixXd temp(3,3);
 			temp.row(0) = R1.transpose();
 			temp.row(1) = R2.transpose();
@@ -334,6 +338,7 @@ MatrixXd CKirchhoff::computeKB(double m) {
 MatrixXd CKirchhoff::computeK(){
 	MatrixXd KB = computeKB(5.0f);//mass
 	MatrixXd KF = computeKF(0.4);//offest 不同的模型需要修改 避免源点跑出去
+	cout << "KF=:" << KF << endl;
 	//MatrixXd temp = KF.rowwise().sum();
 	/*
 	double a = KB[0]; //temp(0, 0);
