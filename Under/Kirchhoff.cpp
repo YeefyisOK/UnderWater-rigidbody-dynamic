@@ -46,31 +46,34 @@ CKirchhoff::CKirchhoff(PIC m_pic)
 			}
 		}
 	}
+	cout << "face[0]=" << face[0] << endl;
+	cout << "face[1]=" << face[1] << endl;
+	cout << "face[2]=" << face[2] << endl;
+	cout << "normal=" << normal << endl;
 }
 MatrixXd CKirchhoff::computeKF(double offset){
 	MatrixXd KF(6, 6);
 	MatrixXd C = face_center();
-	cout << "C=" << C << endl;
+	cout<< "C=" << C << endl;//对
 	MatrixXd S = C - offset * normal;
-	cout << "S=" << S << endl;
+	cout << "S=" << S << endl;//对
 	MatrixXd M = solid_angle(S);
-	cout << "M=" << M << endl;
+	cout << "M=" << M << endl;//应该对
 	MatrixXd FL = motion_flux();
-	cout << " FL=" << FL << endl;
+	cout << " FL=" << FL << endl;//对
 	MatrixXd sigma(numFaces, 6);
 	for (int i = 0; i< 6;i++) {
-
 		sigma.col(i) = M.colPivHouseholderQr().solve(FL.col(i));//sigma=strength NAN!
 	}
 	cout << "sigma=" << sigma << endl;
 	//MatrixXd sigma = division(MF, M);
-	MatrixXd SL = single_layer(S ,C);//inf！
-	cout << "SL=" << SL << endl;
+	MatrixXd SL = single_layer(S ,C);
+	cout << "SL=" << SL << endl;//对
 	MatrixXd phi = SL* sigma;// numFaces * SL * sigma;
 	cout << "phi=" << phi << endl;
 	MatrixXd Q = one_point_quadrature();
 	cout << "Q=" << Q << endl;
-	KF = Q*phi;
+	KF = Q* phi;
 	cout << "KF=" << KF << endl;
 	return KF;
 }
@@ -81,23 +84,23 @@ MatrixXd CKirchhoff::single_layer(MatrixXd S , MatrixXd C){
 		for (int j = 0;j < numFaces;j++) {//S
 			VectorXd temp = C.row(i) - S.row(j);
 			double isZero = temp.dot(temp);
-			if (isZero<0.05 && isZero>-0.05)
-				isZero = 0.05;
+			if (isZero<0.005 && isZero>-0.005)//防止除以0
+				isZero = 0.005;
 			res(i,j) = 1.0/sqrt(isZero);
 		}
 	}
 	return res;
 }
-
-
+/*
 MatrixXd CKirchhoff::face_normal(){
 	MatrixXd AV = area_vector();
 	MatrixXd areas = triangle_area();
 	for (int i = 0; i < 3; i++){
-		AV.col(i) = AV.col(i).cwiseQuotient(areas);
+		AV.col(i) = AV.col(i).cwiseQuotient(areas);// AV/w对应相除
 	}
 	return AV;
 }
+*/
 MatrixXd CKirchhoff::face_center(){
 	MatrixXd res(numFaces, 3);
 	res = (face[0] + face[1] + face[2])/3;
@@ -117,16 +120,23 @@ MatrixXd CKirchhoff::motion_flux(){
 
 MatrixXd CKirchhoff::triangle_area(){
 	MatrixXd res(numFaces, 1);
-	MatrixXd AV = area_vector();//(numFaces, 3);
-	for (int i = 0; i < numPoints; i++){
-		res(i, 0) = sqrt(AV.row(i).dot( AV.row(i) ));
+	MatrixXd p01 = face[1] - face[0];
+	MatrixXd p02 = face[2] - face[0];
+	for (int i = 0; i < numFaces; i++){
+		Vector3d p01i = p01.row(i);
+		Vector3d p02i = p02.row(i);
+		Vector3d temp = p01i.cross(p02i);
+		double length = sqrt(temp(0, 0)*temp(0, 0) + temp(1, 0)*temp(1, 0) + temp(2, 0)*temp(2, 0));
+		//计算叉乘的模
+		res(i, 0) = 0.5*length;
 	}
+	cout << "triangle_area=" << res;
 	return res;
 }
 MatrixXd CKirchhoff::one_point_quadrature(){
 	MatrixXd areas = triangle_area();
 	MatrixXd VF = face_center();
-	MatrixXd NF = face_normal();
+	MatrixXd NF = normal;
 	MatrixXd CR(numFaces, 3);
 	for (int i = 0;i < numFaces;i++) {
 		Vector3d tempVF = VF.row(i);
@@ -143,6 +153,7 @@ MatrixXd CKirchhoff::one_point_quadrature(){
 	return Q;
 }
 MatrixXd CKirchhoff::angular_vector(){
+	/*
 	MatrixXd p1 = face[0];
 	MatrixXd p2 = face[1];
 	MatrixXd p3 = face[2];
@@ -154,6 +165,7 @@ MatrixXd CKirchhoff::angular_vector(){
 		pp2(i, 0) = face[1].row(i).dot(face[1].row(i));
 		pp3(i, 0) = face[2].row(i).dot(face[2].row(i));
 	}
+
 	MatrixXd pp12(numFaces, 1);
 	MatrixXd pp23(numFaces, 1);
 	MatrixXd pp31(numFaces, 1);
@@ -162,11 +174,6 @@ MatrixXd CKirchhoff::angular_vector(){
 		pp23(i, 0) = face[2].row(i).dot(face[1].row(i));
 		pp31(i, 0) = face[2].row(i).dot(face[0].row(i));
 	}
-	//?
-	/*
-	MatrixXd p12(numFaces, 1);
-	MatrixXd p23(numFaces, 1);
-	MatrixXd p31(numFaces, 1);*/
 	MatrixXd p12= pp1 + pp2 + pp12;
 	MatrixXd p23= pp2 + pp3 + pp23;
 	MatrixXd p31= pp3 + pp1 + pp31;
@@ -190,19 +197,31 @@ MatrixXd CKirchhoff::angular_vector(){
 		t1(i, 1) = p12(i, 0)*p2p1.col(1)(i, 0);
 		t2(i, 1) = p23(i, 0)*p3p2.col(1)(i, 0);
 		t3(i, 1) = p31(i, 0)*p1p3.col(1)(i, 0);
+	}*/
+	MatrixXd res(numFaces,3);
+	for (int i = 0;i < numFaces;i++) {
+		Vector3d omega1(1, 0, 0);
+		Vector3d omega2(0, 1, 0);
+		Vector3d omega3(0, 0, 1);
+		Matrix3d temp;
+		temp.row(0) = omega1.transpose();
+		temp.row(1) = normal.row(i);
+		temp.row(2) = face_center().row(i);
+		res(i, 0) = 0.5*temp.determinant();
+		temp.row(0) = omega2.transpose();
+		res(i, 1) = 0.5*temp.determinant();
+		temp.row(0) = omega3.transpose();
+		res(i, 2) = 0.5*temp.determinant();
 	}
-	MatrixXd res= -(t1 + t2 + t3) / 6;
 	return res;
 }
 MatrixXd CKirchhoff::area_vector(){
 	MatrixXd AV(numFaces,3);
+	MatrixXd area = triangle_area();//向量
 	for (int i = 0;i < numFaces;i++) {
-		Vector3d tempface0 = face[0].row(i);
-		Vector3d tempface1 = face[1].row(i);
-		Vector3d tempface2 = face[2].row(i);
-
-		AV.row(i) = 0.5*(tempface0.cross(tempface1) + tempface0.cross(tempface2)
-			+ tempface2.cross(tempface0));
+		AV(i, 0) = area(i, 0) * normal(i, 0);
+		AV(i, 1) = area(i, 0) * normal(i, 1);
+		AV(i, 2) = area(i, 0) * normal(i, 2);
 	}
 	return AV;
 }
@@ -213,16 +232,17 @@ MatrixXd CKirchhoff::solid_angle(MatrixXd src){//numPoints*3
 		for (int j = 0; j < numFaces; j++){
 			Vector3d R1 = face[0].row(i) - src.row(j);
 			Vector3d R2 = face[1].row(i) - src.row(j);
-			Vector3d R3 = face[2].row(i) - src.row(j);//向量还是矩阵可以dot
-			Matrix3d temp;
-			temp.row(0) = R1;
-			temp.row(1) = R2;
-			temp.row(2) = R3;
-			double N = R1.dot(R2.cross(R3));
+			Vector3d R3 = face[2].row(i) - src.row(j);
+			MatrixXd temp(3,3);
+			temp.row(0) = R1.transpose();
+			temp.row(1) = R2.transpose();
+			temp.row(2) = R3.transpose();
+			double N = temp.determinant();
+			//double test= R1.dot(R2.cross(R3));
 			double l1 = sqrt(R1.dot(R1));
 			double l2 = sqrt(R2.dot(R2));
 			double l3 = sqrt(R3.dot(R3));
-			double Den = l1*l2*l3 + l1*R2.dot(R3) + l2*R3.dot(R1) + l3*R1.dot(R2);
+			double Den = l1*l2*l3 + l1*R2.dot(R3) + l2*R1.dot(R3) + l3*R1.dot(R2);
 			res(i, j) = 2 * atan(N / Den);
 		}
 	}
@@ -313,7 +333,7 @@ MatrixXd CKirchhoff::computeKB(double m) {
 }
 MatrixXd CKirchhoff::computeK(){
 	MatrixXd KB = computeKB(5.0f);//mass
-	MatrixXd KF = computeKF(0.4);//offest
+	MatrixXd KF = computeKF(0.4);//offest 不同的模型需要修改 避免源点跑出去
 	//MatrixXd temp = KF.rowwise().sum();
 	/*
 	double a = KB[0]; //temp(0, 0);

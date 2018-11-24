@@ -26,7 +26,7 @@ public:
 	MatrixXd triangle_area();
 	MatrixXd area_vector();
 	MatrixXd face_center();
-	MatrixXd face_normal();
+	//MatrixXd face_normal();
 	MatrixXd single_layer(MatrixXd a,MatrixXd b);
 	MatrixXd motion_flux();
 	MatrixXd one_point_quadrature();
