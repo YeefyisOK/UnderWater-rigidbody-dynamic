@@ -21,7 +21,7 @@ CKirchhoff::CKirchhoff(PIC m_pic)
 		}
 	}
 	if (m_pic.F.size() > 0) {
-		for (int i = 0; i < numPoints; i++){
+		for (int i = 0; i < numFaces; i++){
 			
 			VectorXd temp(3);
 			temp(0) = m_pic.VN[m_pic.F[i].N[0]].NX ;
@@ -32,7 +32,7 @@ CKirchhoff::CKirchhoff(PIC m_pic)
 	}
 	if (m_pic.F.size() > 0) {
 		for (int k = 0; k < 3; k++){//第几行
-			for (int i = 0; i < numPoints; i++){
+			for (int i = 0; i < numFaces; i++){
 				/*
 				vector <double>zuobiao;
 				zuobiao.push_back(m_pic.V[m_pic.F[i].V[k]].X);
@@ -46,25 +46,33 @@ CKirchhoff::CKirchhoff(PIC m_pic)
 			}
 		}
 	}
-
 }
 MatrixXd CKirchhoff::computeKF(double offset){
-	MatrixXd K(6, 6);
+	MatrixXd KF(6, 6);
 	MatrixXd C = face_center();
+	//cout << "C=" << C << endl;
 	MatrixXd S = C - offset * normal;
+	//cout << "S=" << S << endl;
 	MatrixXd M = solid_angle(S);
+	//cout << "M=" << M << endl;
 	MatrixXd FL = motion_flux();
+	//cout << " FL=" << FL << endl;
 	MatrixXd sigma(numFaces, 6);
 	for (int i = 0; i< 6;i++) {
 
 		sigma.col(i) = M.colPivHouseholderQr().solve(FL.col(i));//sigma=strength NAN!
 	}
+	//cout << "sigma=" << sigma << endl;
 	//MatrixXd sigma = division(MF, M);
 	MatrixXd SL = single_layer(S ,C);//inf！
+	//cout << "SL=" << SL << endl;
 	MatrixXd phi = SL* sigma;// numFaces * SL * sigma;
+	//cout << "phi=" << phi << endl;
 	MatrixXd Q = one_point_quadrature();
-	K = Q*phi;
-	return K;
+	//cout << "Q=" << Q << endl;
+	KF = Q*phi;
+	//cout << "KF=" << KF << endl;
+	return KF;
 }
 
 MatrixXd CKirchhoff::single_layer(MatrixXd S , MatrixXd C){
@@ -238,12 +246,12 @@ Matrix3d CKirchhoff::comuputeJ() {
 		1.0 / 60, 1.0 / 60, 1.0 / 60, 1.0 / 120, 1.0 / 120, 1.0 / 120 };
 	double intg[10] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // order: 1, x, y, z, x^2, y^2, z^2, xy, yz, zx 
 
-	double f1x, f2x, f3x;
-	double f1y, f2y, f3y;
-	double f1z, f2z, f3z;
-	double g0x, g1x, g2x;
-	double g0y, g1y, g2y;
-	double g0z, g1z, g2z;
+	double f1x = 0, f2x = 0, f3x = 0;
+	double f1y = 0, f2y = 0, f3y = 0;
+	double f1z = 0, f2z = 0, f3z = 0;
+	double g0x = 0, g1x = 0, g2x = 0;
+	double g0y = 0, g1y = 0, g2y = 0;
+	double g0z = 0, g1z = 0, g2z = 0;
 	for (int t = 0; t < numFaces; t++) { // get vertices of triangle t 
 		/*
 		i0 = index[3*t]; 	i1 = index[3*t+1];		i2 = index[3*t+2];
@@ -263,7 +271,7 @@ Matrix3d CKirchhoff::comuputeJ() {
 		double y2 = face[2](t,1);
 		double z2 = face[2](t,2);
 		// get edges and cross product of edges 
-		double a1 = x1 - x0; double  b1 = y1 - y0; double  c1 = z1 - z0;
+		double a1 = x1 - x0; double b1 = y1 - y0; double c1 = z1 - z0;
 		double a2 = x2 - x0; double b2 = y2 - y0; double c2 = z2 - z0;
 		double d0 = b1*c2 - b2*c1; double d1 = a2*c1 - a1*c2; double d2 = a1*b2 - a2*b1;
 		// compute integral terms
@@ -306,7 +314,7 @@ MatrixXd CKirchhoff::computeKB(double m) {
 MatrixXd CKirchhoff::computeK(){
 	MatrixXd KB = computeKB(5.0f);//mass
 	cout << "KB:" << KB << endl;
-	//MatrixXd KF = computeKF(0.4);//offest
+	MatrixXd KF = computeKF(0.4);//offest
 	//MatrixXd temp = KF.rowwise().sum();
 	/*
 	double a = KB[0]; //temp(0, 0);
@@ -315,8 +323,8 @@ MatrixXd CKirchhoff::computeK(){
 	double d = KB[3];//temp(3, 0);
 	double e = KB[4];//temp(4, 0);
 	double f = KB[5];//temp(5, 0);*/
-	//KB.setIdentity();//先用单位阵试试
+	KB.setIdentity();//先用单位阵试试
 
-	MatrixXd Kirchhoff = KB;//+ KF;
+	MatrixXd Kirchhoff = KB+ KF;
 	return Kirchhoff;
 }

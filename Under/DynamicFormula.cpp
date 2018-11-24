@@ -89,16 +89,9 @@ void DynamicFormula::computeNextR(Matrix3d R_) {
 	q = delta_q;
 //	cout << "delta_q:" << delta_q.coeffs() << endl;
 	Quaterniond q_new = delta_q * q_old;
-
 //	cout << "q_new:" << q_new.coeffs() << endl;
 	q_new.normalize();
 	R = q_new.toRotationMatrix();
-	/*
-	cout << "R的第一行是(" << R(0, 0) << "," << R(0, 1) << "," << R(0, 2) << ")" << endl;
-	cout << "R的第二行是(" << R(1, 0) << "," << R(1, 1) << "," << R(1, 2) << ")" << endl;
-	cout << "R的第三行是(" << R(2, 0) << "," << R(2, 1) << "," << R(2, 2) << ")" << endl;
-	cout << endl;
-	*/
 }
 void DynamicFormula::computeNexty( Vector3d y_) {
 	temp_deltay = delta_t * y_;

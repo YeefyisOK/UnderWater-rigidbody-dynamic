@@ -16,7 +16,7 @@ using namespace Eigen;
 因为一个定时器只被调用一次，所以需要多次调用定时器
 */
 //obj读取
-string name = "H:\\MeshData\\cube.obj";
+string name = "H:\\MeshData\\cube.obj";//Apple.obj
 PIC m_pic;
 
 void drawScene();
@@ -220,71 +220,7 @@ void display() {
 	glFlush();              //绘制结束，Flush 当前渲染流水线 
 	glutSwapBuffers();       //交换前后缓存（只用于双缓冲的模式） 
 }
-void DrawCylinder(double r, double h, int nSlice)
-{
-	//glTranslated(0, 0, -h / 2);
 
-#define  PI   3.1415926
-	double delta = PI * 2 / nSlice;
-	double angle = delta;
-
-	glColor3f(1.0f, 0.0f, 0.0f);
-
-	//top
-	glBegin(GL_TRIANGLE_FAN);
-	glNormal3f(0, 0, 1);
-	glVertex3d(0, 0, h);
-	glVertex3d(r, 0, h);
-	for (int i = 1; i < nSlice; ++i)
-	{
-		glVertex3d(r * cos(angle), r * sin(angle), h);
-		angle += delta;
-	}
-	glVertex3d(r, 0, h);
-	glEnd();
-
-	//bottom
-	angle = delta;
-	glColor3f(0.0f, 1.0f, 0.0f);
-
-	glBegin(GL_TRIANGLE_FAN);
-	glNormal3f(0, 0, -1);
-	glVertex3d(0, 0, 0);
-	glVertex3d(r, 0, 0);
-	for (int i = 1; i < nSlice; ++i)
-	{
-		glVertex3d(r * cos(angle), r * sin(angle), 0);
-		angle += delta;
-	}
-	glVertex3d(r, 0, 0);
-	glEnd();
-
-	//cylinder
-	angle = delta;
-	glColor3f(0.0f, 0.0f, 1.0f);
-
-	glBegin(GL_QUAD_STRIP);
-	glNormal3f(1, 0, 0);
-	glVertex3d(r, 0, h);
-	glVertex3d(r, 0, 0);
-	for (int i = 1; i < nSlice; ++i)
-	{
-		double c = cos(angle);
-		double s = sin(angle);
-		glNormal3d(c, s, 0);
-
-		double x = r * c;
-		double y = r * s;
-		glVertex3d(x, y, h);
-		glVertex3d(x, y, 0);
-
-		angle += delta;
-	}
-	glNormal3f(1, 0, 0);
-	glVertex3d(r, 0, h);
-	glVertex3d(r, 0, 0);
-	glEnd();
-}
 void drawScene()           //绘制
 {	
 	//glRotated()
@@ -306,7 +242,7 @@ void reshape(int width, int height) {
 	glOrtho(-5, 5, -5, 5, -10, 10);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
-	gluLookAt(4, -1, -2, 0, 0, 0, 0, 0, 1);//4, 0, -2,
+	gluLookAt(2, 0, -2, 0, 0, 0, 0, 0, 1);//4, 0, -2,
 }
 
 void TimerFunction(int value)
