@@ -81,7 +81,7 @@ MatrixXd CKirchhoff::single_layer(MatrixXd S , MatrixXd C){
 		for (int j = 0;j < numFaces;j++) {//S
 			VectorXd temp = C.row(i) - S.row(j);
 			double isZero = temp.dot(temp);
-			if (isZero<-0.05 || isZero>0.05)
+			if (isZero<0.05 && isZero>-0.05)
 				isZero = 0.05;
 			res(i,j) = 1.0/sqrt(isZero);
 		}
