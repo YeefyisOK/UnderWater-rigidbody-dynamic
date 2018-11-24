@@ -28,7 +28,7 @@ GLfloat windowHeight;
 CVector3D temp_deltay(0,0,0);
 CQuaternion q(0, 0, 0, 0);*/
 Vector3d omega(0, 0, 1);
-Vector3d velocity(0, 0, -1);			
+Vector3d velocity(0, 0, 0);			
 Matrix3d R = Matrix3d::Identity();//设置为单位阵 在init()改不是单位阵
 
 /*
@@ -37,7 +37,7 @@ R << 0, 1, 0,
 	0, 0, 1;*/
 Vector3d y(0,0,0);
 Vector3d ts(0,0,0);
-Vector3d fs(0,0,0);
+Vector3d fs(0,0,-10);
 MatrixXd K;
 double delta_t=0.01;
 
