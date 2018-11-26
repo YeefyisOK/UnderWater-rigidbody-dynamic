@@ -70,6 +70,12 @@ MatrixXd CKirchhoff::computeKF(double offset){
 	//MatrixXd sigma = division(MF, M);
 	MatrixXd SL = single_layer(S ,C);
 	cout << "SL=" << SL << endl;//对
+	MatrixXd SLT = SL.transpose();
+	bool isDuiChen = false;
+	if (SL == SLT) {
+		isDuiChen = true;
+	}
+	cout << "SL是不是对称" << isDuiChen << endl;
 	MatrixXd phi = SL* sigma;// numFaces * SL * sigma;
 	cout << "phi=" << phi << endl;
 	MatrixXd Q = one_point_quadrature();
