@@ -16,7 +16,7 @@ using namespace Eigen;
 因为一个定时器只被调用一次，所以需要多次调用定时器
 */
 //obj读取
-string name = "H:\\MeshData\\cube.obj";//Apple.obj
+string name = "H:\\MeshData\\tuoyuan.obj";//Apple.obj
 PIC m_pic;
 
 void drawScene();
