@@ -16,32 +16,33 @@ using namespace Eigen;
 因为一个定时器只被调用一次，所以需要多次调用定时器
 */
 //obj读取
-string name = "H:\\MeshData\\tuoyuan.obj";//Apple.obj
+string name = "H:\\MeshData\\bunnyclose.obj";//tuoyuan.obj yuanpan bunnyclose 
 PIC m_pic;
 
 void drawScene();
 //窗口的大小
 GLfloat windowWidth;
 GLfloat windowHeight;
-/*
-//偏移量 旋转量
-CVector3D temp_deltay(0,0,0);
-CQuaternion q(0, 0, 0, 0);*/
-Vector3d omega(0, 0, 1);
+Vector3d omega(0, 0, 0);
 Vector3d velocity(0, 0, 0);			
 Matrix3d R = Matrix3d::Identity();//设置为单位阵 在init()改不是单位阵
 /*
 R << 0, 1, 0,
 	1, 0, 0,
 	0, 0, 1;*/
-Vector3d y(0,0,0);
+Vector3d y(0,0,20);
 Vector3d ts(0,0,0);
 Vector3d fs(0,0,-10);
 MatrixXd K;
 double delta_t=0.01;
 
 DynamicFormula m_DF(omega,velocity,R,y,ts,fs,K,delta_t);
-
+bool mouseLeftDown;
+bool mouseRightDown;
+float mouseX, mouseY;
+float cameraDistance;
+float cameraAngleX;
+float cameraAngleY;
 void ReadPIC()
 {
 	ifstream ifs(name);//cube bunny Eight
@@ -137,7 +138,8 @@ void GLDraw()
 	//使能GL_COLOR_MATERIAL，而后利用glColorMaterial()函数指明glColor*()函数将影响到的材质属性
 	glEnable(GL_COLOR_MATERIAL);
 	glColorMaterial(GL_FRONT, GL_DIFFUSE);
-	
+
+	glColor3f(0.0, 1.0, 0.0);     //绿
 	for (int i = 0; i<m_pic.F.size(); i++)
 	{
 		glBegin(GL_TRIANGLE_FAN);                            // 绘制三角形GL_TRIANGLES;GL_LINE_LOOP;GL_LINES;GL_POINTS
@@ -153,8 +155,6 @@ void GLDraw()
 		if (m_pic.VN.size() != 0)glNormal3f(m_pic.VN[m_pic.F[i].N[2]].NX, m_pic.VN[m_pic.F[i].N[2]].NY, m_pic.VN[m_pic.F[i].N[2]].NZ);//法向量
 		glVertex3f(m_pic.V[m_pic.F[i].V[2]].X , m_pic.V[m_pic.F[i].V[2]].Y , m_pic.V[m_pic.F[i].V[2]].Z );        // 右下
 		glEnd();
-
-		glColor3f(0.0, 1.0, 0.0);     
 		// 三角形绘制结束    
 		/*if(m_pic.VN.size()!=0){
 		glBegin(GL_LINES);                            // 绘制三角形
@@ -220,14 +220,17 @@ void display() {
 }
 
 void drawScene()           //绘制
-{	
-	//glRotated()
-	//glTranslated(m_translate[0], m_translate[1], m_translate[2]);
+{
+	if (mouseLeftDown || mouseRightDown) {
+		glTranslatef(0, 0, -cameraDistance*0.01);
+		glRotatef(cameraAngleX*0.01, 1, 0, 0);
+		glRotatef(cameraAngleY*0.01, 0, 1, 0);
+	}
+	
 	glTranslated(m_DF.temp_deltay(0), m_DF.temp_deltay(1), m_DF.temp_deltay(2));
 	glRotated(m_DF.q.w(), m_DF.q.x(), m_DF.q.y(), m_DF.q.z());
-	glColor3f(0.0, 1.0, 0.0);     //绿
+	
 	GLDraw();
-	//DrawCylinder(1,2, 32);
 }
 //窗口大小发生变化时的响应函数 
 void reshape(int width, int height) {
@@ -237,10 +240,11 @@ void reshape(int width, int height) {
 	double ratio = (double)width / height;
 	glLoadIdentity();
 	//gluPerspective(60, ratio, 1, 1000);
-	glOrtho(-5, 5, -5, 5, -10, 10);
+	glOrtho(-25, 25, -25, 25, -10, 10);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 	gluLookAt(2, 0, -2, 0, 0, 0, 0, 0, 1);//4, 0, -2,
+
 }
 
 void TimerFunction(int value)
@@ -255,7 +259,49 @@ void TimerFunction(int value)
 	glutPostRedisplay(); //标志重新绘制
 	glutTimerFunc(delta_t*1000, TimerFunction, 1);
 }
+void mouseCB(int button, int state, int x, int y)
+{
+	mouseX = x;
+	mouseY = y;
 
+	if (button == GLUT_LEFT_BUTTON)
+	{
+		if (state == GLUT_DOWN)
+		{
+			mouseLeftDown = true;
+		}
+		else if (state == GLUT_UP)
+			mouseLeftDown = false;
+	}
+
+	else if (button == GLUT_RIGHT_BUTTON)
+	{
+		if (state == GLUT_DOWN)
+		{
+			mouseRightDown = true;
+		}
+		else if (state == GLUT_UP)
+			mouseRightDown = false;
+	}
+}
+
+void mouseMotionCB(int x, int y)
+{
+	if (mouseLeftDown)
+	{
+		cameraAngleY += (x - mouseX);
+		cameraAngleX += (y - mouseY);
+		mouseX = x;
+		mouseY = y;
+	}
+	if (mouseRightDown)
+	{
+		cameraDistance += (y - mouseY) * 0.2f;
+		mouseY = y;
+	}
+	//glLoadIdentity();
+	glutPostRedisplay();
+}
 int main(int argc, char* argv[]) {
 	glutInit(&argc, argv);    //GLUT 库的初始化 
 	//显示模式初始化：颜色格式——GLUT_RGBA 
@@ -264,6 +310,8 @@ int main(int argc, char* argv[]) {
 	glutInitWindowPosition(100, 100);          //窗口起始位置 
 	glutInitWindowSize(500, 500);             //窗口大小 
 	glutCreateWindow("UnderWaterRidgebody");       //创建窗口并指定窗口的名称 
+	glutMouseFunc(mouseCB);
+	glutMotionFunc(mouseMotionCB);
 
 	init();                                 //OpenGL 的初始化设置 
 
