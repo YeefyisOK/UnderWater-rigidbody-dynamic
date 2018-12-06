@@ -78,7 +78,7 @@ CKirchhoff::CKirchhoff(PIC m_pic)
 	//清除内存
 	m_pic.V.swap(vector<Vertex>());
 	m_pic.VN.swap(vector< FaXiangLiang>());
-	m_pic.VT.swap(vector< WenLi>());
+	//m_pic.VT.swap(vector< WenLi>());
 	m_pic.F.swap(vector<Mian>());
 	/*
 	cout << "face[0]=" << face[0] << endl;
@@ -390,7 +390,7 @@ MatrixXd CKirchhoff::computeKB(double m) {
 }
 MatrixXd CKirchhoff::computeK(){
 	MatrixXd KB = computeKB(5.0f);//mass
-	MatrixXd KF = computeKF(0.05);//offest 不同的模型需要修改 避免源点跑出去
+	MatrixXd KF = computeKF(0.01);//offest 不同的模型需要修改 避免源点跑出去
 	//MatrixXd temp = KF.rowwise().sum();
 	/*
 	double a = KB[0]; //temp(0, 0);

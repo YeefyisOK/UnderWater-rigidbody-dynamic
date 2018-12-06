@@ -15,8 +15,8 @@ using namespace Eigen;
 定时器第一个参数是每隔millis毫秒便调用func函数，并且创一个value参数进去
 因为一个定时器只被调用一次，所以需要多次调用定时器
 */
-//obj读取
-string name = "H:\\MeshData\\bunnyclose.obj";//tuoyuan.obj yuanpan bunnyclose 
+//obj读取   ../source/yuanpan.obj
+string name = "H:\\MeshData\\bunnyclose.obj";//tuoyuan.obj yuanpan bunnyclose  myprop2
 PIC m_pic;
 
 void drawScene();
@@ -55,14 +55,15 @@ void ReadPIC()
 	{
 		if (s.length()<2)continue;
 		if (s[0] == 'v'){
+			/*
 			if (s[1] == 't'){//vt 0.581151 0.979929 纹理
 				istringstream in(s);
 				vt = new WenLi();
 				string head;
 				in >> head >> vt->TU >> vt->TV;
 				m_pic.VT.push_back(*vt);
-			}
-			else if (s[1] == 'n'){//vn 0.637005 -0.0421857 0.769705 法向量
+			}else*/
+			 if (s[1] == 'n'){//vn 0.637005 -0.0421857 0.769705 法向量
 				istringstream in(s);
 				vn = new FaXiangLiang();
 				string head;
@@ -93,11 +94,12 @@ void ReadPIC()
 					in >> f->V[i];
 					f->V[i] -= 1;
 				}
+				/*
 				if (m_pic.VT.size() != 0)
 				{
 					in >> f->T[i];
 					f->T[i] -= 1;
-				}
+				}*/
 				if (m_pic.VN.size() != 0)
 				{
 					in >> f->N[i];
@@ -143,15 +145,15 @@ void GLDraw()
 	for (int i = 0; i<m_pic.F.size(); i++)
 	{
 		glBegin(GL_TRIANGLE_FAN);                            // 绘制三角形GL_TRIANGLES;GL_LINE_LOOP;GL_LINES;GL_POINTS
-		if (m_pic.VT.size() != 0)glTexCoord2f(m_pic.VT[m_pic.F[i].T[0]].TU, m_pic.VT[m_pic.F[i].T[0]].TV);  //纹理    
+		//if (m_pic.VT.size() != 0)glTexCoord2f(m_pic.VT[m_pic.F[i].T[0]].TU, m_pic.VT[m_pic.F[i].T[0]].TV);  //纹理    
 		if (m_pic.VN.size() != 0)glNormal3f(m_pic.VN[m_pic.F[i].N[0]].NX, m_pic.VN[m_pic.F[i].N[0]].NY, m_pic.VN[m_pic.F[i].N[0]].NZ);//法向量
 		glVertex3f(m_pic.V[m_pic.F[i].V[0]].X , m_pic.V[m_pic.F[i].V[0]].Y , m_pic.V[m_pic.F[i].V[0]].Z );        // 上顶点
 
-		if (m_pic.VT.size() != 0)glTexCoord2f(m_pic.VT[m_pic.F[i].T[1]].TU, m_pic.VT[m_pic.F[i].T[1]].TV);  //纹理
+		//if (m_pic.VT.size() != 0)glTexCoord2f(m_pic.VT[m_pic.F[i].T[1]].TU, m_pic.VT[m_pic.F[i].T[1]].TV);  //纹理
 		if (m_pic.VN.size() != 0)glNormal3f(m_pic.VN[m_pic.F[i].N[1]].NX, m_pic.VN[m_pic.F[i].N[1]].NY, m_pic.VN[m_pic.F[i].N[1]].NZ);//法向量
 		glVertex3f(m_pic.V[m_pic.F[i].V[1]].X , m_pic.V[m_pic.F[i].V[1]].Y , m_pic.V[m_pic.F[i].V[1]].Z );        // 左下
 
-		if (m_pic.VT.size() != 0)glTexCoord2f(m_pic.VT[m_pic.F[i].T[2]].TU, m_pic.VT[m_pic.F[i].T[2]].TV);  //纹理
+		//if (m_pic.VT.size() != 0)glTexCoord2f(m_pic.VT[m_pic.F[i].T[2]].TU, m_pic.VT[m_pic.F[i].T[2]].TV);  //纹理
 		if (m_pic.VN.size() != 0)glNormal3f(m_pic.VN[m_pic.F[i].N[2]].NX, m_pic.VN[m_pic.F[i].N[2]].NY, m_pic.VN[m_pic.F[i].N[2]].NZ);//法向量
 		glVertex3f(m_pic.V[m_pic.F[i].V[2]].X , m_pic.V[m_pic.F[i].V[2]].Y , m_pic.V[m_pic.F[i].V[2]].Z );        // 右下
 		glEnd();
