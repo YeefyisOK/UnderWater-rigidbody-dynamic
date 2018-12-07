@@ -71,33 +71,6 @@
     <ClInclude Include="DynamicFormula.h">
       <Filter>dynamics</Filter>
     </ClInclude>
-    <ClInclude Include="..\packages\nupengl.core.0.1.0.1\build\native\include\GL\freeglut.h">
-      <Filter>资源文件</Filter>
-    </ClInclude>
-    <ClInclude Include="..\packages\nupengl.core.0.1.0.1\build\native\include\GL\freeglut_ext.h">
-      <Filter>资源文件</Filter>
-    </ClInclude>
-    <ClInclude Include="..\packages\nupengl.core.0.1.0.1\build\native\include\GL\freeglut_std.h">
-      <Filter>资源文件</Filter>
-    </ClInclude>
-    <ClInclude Include="..\packages\nupengl.core.0.1.0.1\build\native\include\GL\glew.h">
-      <Filter>资源文件</Filter>
-    </ClInclude>
-    <ClInclude Include="..\packages\nupengl.core.0.1.0.1\build\native\include\GL\glut.h">
-      <Filter>资源文件</Filter>
-    </ClInclude>
-    <ClInclude Include="..\packages\nupengl.core.0.1.0.1\build\native\include\GL\glxew.h">
-      <Filter>资源文件</Filter>
-    </ClInclude>
-    <ClInclude Include="..\packages\nupengl.core.0.1.0.1\build\native\include\GL\wglew.h">
-      <Filter>资源文件</Filter>
-    </ClInclude>
-    <ClInclude Include="..\packages\nupengl.core.0.1.0.1\build\native\include\GLFW\glfw3.h">
-      <Filter>资源文件</Filter>
-    </ClInclude>
-    <ClInclude Include="..\packages\nupengl.core.0.1.0.1\build\native\include\GLFW\glfw3native.h">
-      <Filter>资源文件</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
