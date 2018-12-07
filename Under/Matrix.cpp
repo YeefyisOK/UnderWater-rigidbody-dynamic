@@ -4,7 +4,7 @@
 
 CMatrix::CMatrix(void)
 {
-	//memset((double *)m_data, sizeof(double) * 9, 0);
+	//memset((float *)m_data, sizeof(float) * 9, 0);
 	for (int i = 0; i < 3; ++i)
 	{
 		for (int j = 0; j < 3; ++j)
@@ -22,15 +22,15 @@ CMatrix::~CMatrix(void)
 {
 }
 
-CVector3D CMatrix::operator *(const CVector3D &vector) const
+CVector3f CMatrix::operator *(const CVector3f &vector) const
 {
-	double res[3] = { 0, 0, 0 };
+	float res[3] = { 0, 0, 0 };
 
 	res[0] = (m_data[0][0] + m_data[0][1] + m_data[0][2]) * vector[0];
 	res[1] = (m_data[1][0] + m_data[1][1] + m_data[1][2]) * vector[1];
 	res[2] = (m_data[2][0] + m_data[2][1] + m_data[2][2]) * vector[2];
 
-	CVector3D v_result(res);
+	CVector3f v_result(res);
 	return v_result;
 }
 
@@ -54,15 +54,15 @@ CMatrix CMatrix::operator %(const CMatrix &matrix) const
 	return result;
 }
 
-CMatrix CMatrix::s_GetRotaionMatrix(double angle, const CPoint3D &axis)
+CMatrix CMatrix::s_GetRotaionMatrix(float angle, const CPoint3D &axis)
 {
-	double x = axis[0];
-	double y = axis[1];
-	double z = axis[2];
+	float x = axis[0];
+	float y = axis[1];
+	float z = axis[2];
 
 #define  ZERO_TOL    1.0e-7
-	double s = sin(angle);
-	double c = cos(angle);
+	float s = sin(angle);
+	float c = cos(angle);
 
 	CMatrix matrix;
 	if (fabs(z) < ZERO_TOL)
@@ -131,20 +131,20 @@ CMatrix CMatrix::s_GetRotaionMatrix(double angle, const CPoint3D &axis)
 	//common case
 
 	//normalize the rotation axis
-	double mag = sqrt(x * x + y * y + z * z);
+	float mag = sqrt(x * x + y * y + z * z);
 	mag = 1.0 / mag;
 	x *= mag;
 	y *= mag;
 	z *= mag;
 
-	double t = 1.0 - c;
+	float t = 1.0 - c;
 
-	double tx = t * x;
-	double ty = t * y;
-	double tz = t * z;
-	double sx = s * x;
-	double sy = s * y;
-	double sz = s * z;
+	float tx = t * x;
+	float ty = t * y;
+	float tz = t * z;
+	float sx = s * x;
+	float sy = s * y;
+	float sz = s * z;
 
 	//-----------------------------------------------------------
 	//		| t*x*x + c		t*x*y - s*z		t*x*z + s*y |

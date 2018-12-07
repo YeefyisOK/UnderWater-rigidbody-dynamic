@@ -7,21 +7,21 @@ public:
 	CMatrix(void);
 	~CMatrix(void);
 
-	double* operator[](int idx)
+	float* operator[](int idx)
 	{
 		return m_data[idx];
 	}
 
-	const double* operator[](int idx) const
+	const float* operator[](int idx) const
 	{
 		return m_data[idx];
 	}
 
 	CMatrix operator % (const CMatrix &matrix) const;//矩阵乘法
-	CVector3D operator * (const CVector3D &vector) const;//矩阵乘以向量
-	static CMatrix s_GetRotaionMatrix(double angle, const CPoint3D &axis);
+	CVector3f operator * (const CVector3f &vector) const;//矩阵乘以向量
+	static CMatrix s_GetRotaionMatrix(float angle, const CPoint3D &axis);
 
 private:
-	double m_data[3][3];
+	float m_data[3][3];
 };
 

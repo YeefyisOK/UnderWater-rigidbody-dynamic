@@ -1,6 +1,6 @@
 #include"DynamicFormula.h"
-DynamicFormula::DynamicFormula(Vector3d omega, Vector3d velocity, Matrix3d R,
-	Vector3d y, Vector3d ts, Vector3d fs, MatrixXd K, double delta_t)
+DynamicFormula::DynamicFormula(Vector3f omega, Vector3f velocity, Matrix3f R,
+	Vector3f y, Vector3f ts, Vector3f fs, MatrixXf K, float delta_t)
 {
 	this->w = omega;
 	this->v = velocity;
@@ -15,8 +15,8 @@ DynamicFormula::DynamicFormula(Vector3d omega, Vector3d velocity, Matrix3d R,
 DynamicFormula::~DynamicFormula()
 {
 }
-Matrix3d DynamicFormula::toDaOmegaOrY(Vector3d omega) {
-	Matrix3d res;
+Matrix3f DynamicFormula::toDaOmegaOrY(Vector3f omega) {
+	Matrix3f res;
 	res(0, 0) = 0;
 	res(0, 1) = -omega(2);
 	res(0, 2) = omega(1);
@@ -28,17 +28,17 @@ Matrix3d DynamicFormula::toDaOmegaOrY(Vector3d omega) {
 	res(2, 2) = 0;
 	return res;
 }
-VectorXd DynamicFormula::tsfs2tf(Matrix3d R, Matrix3d Y){
-	Matrix3d Rt = R.transpose();
-	Matrix3d zero=Matrix3d::Zero();
+VectorXf DynamicFormula::tsfs2tf(Matrix3f R, Matrix3f Y){
+	Matrix3f Rt = R.transpose();
+	Matrix3f zero=Matrix3f::Zero();
 	//zero.setZero(3, 3);
-	Matrix3d negRtY =  zero- Rt * Y;
-	MatrixXd trans(6, 6);//矩阵分块赋值
+	Matrix3f negRtY =  zero- Rt * Y;
+	MatrixXf trans(6, 6);//矩阵分块赋值
 	trans.block(0, 0, 3, 3) = Rt.block(0, 0, 3, 3);
 	trans.block(0, 3, 3, 3) = negRtY.block(0, 0, 3, 3);
 	trans.block(3, 0, 3, 3) = zero.block(0, 0, 3, 3);
 	trans.block(3, 3, 3, 3) = Rt.block(0, 0, 3, 3);
-	VectorXd tsfs(6);
+	VectorXf tsfs(6);
 	tsfs.block(0, 0, 3, 1) = ts;
 	tsfs.block(3, 0, 3, 1) = fs;
 	/*
@@ -50,81 +50,81 @@ VectorXd DynamicFormula::tsfs2tf(Matrix3d R, Matrix3d Y){
 	tsfs(5) = fs(2);*/	
 	return trans * tsfs;
 }
-Matrix3d DynamicFormula::computeR_() {
-	Matrix3d daOmega = toDaOmegaOrY(w);
+Matrix3f DynamicFormula::computeR_() {
+	Matrix3f daOmega = toDaOmegaOrY(w);
 	return R * daOmega;
 }
-Vector3d DynamicFormula::computey_() {
+Vector3f DynamicFormula::computey_() {
 	return R * v;
 }
-VectorXd DynamicFormula::computelp() {
-	VectorXd wv(6);
+VectorXf DynamicFormula::computelp() {
+	VectorXf wv(6);
 	wv.block(0, 0, 3, 1) = w;
 	wv.block(3, 0, 3, 1) = v;
 	return K * wv;
 }
-VectorXd DynamicFormula::computelp_(VectorXd lp) {
-	Matrix3d Y = toDaOmegaOrY(y);
-	VectorXd tf= tsfs2tf(R, Y);
-	Vector3d l = vec62Vec31(lp);
-	Vector3d p = vec62Vec32(lp);
-	Vector3d a = l.cross(w) + p.cross(v);
-	Vector3d b = p.cross(w);
-	VectorXd ab(6);
+VectorXf DynamicFormula::computelp_(VectorXf lp) {
+	Matrix3f Y = toDaOmegaOrY(y);
+	VectorXf tf= tsfs2tf(R, Y);
+	Vector3f l = vec62Vec31(lp);
+	Vector3f p = vec62Vec32(lp);
+	Vector3f a = l.cross(w) + p.cross(v);
+	Vector3f b = p.cross(w);
+	VectorXf ab(6);
 	ab.block(0, 0, 3, 1) = a;
 	ab.block(3, 0, 3, 1) = b;
 	return ab + tf;
 }
-void DynamicFormula::computeNextR(Matrix3d R_) {
+void DynamicFormula::computeNextR(Matrix3f R_) {
 //	cout << "R_=" << R_ << endl;
 //	cout << "R=" << R << endl;
-	Quaterniond q_old(R);//可以构造函数 也可以直接赋值
+	Quaternionf q_old(R);//可以构造函数 也可以直接赋值
 	q_old.normalize();
 //	cout << "q_old:" << q_old.coeffs() << endl;
-	Quaterniond q_w(0, w(0), w(1), w(2));
-	double length =sqrt( w(0)*w(0) + w(1)*w(1) + w(2)*w(2));
+	Quaternionf q_w(0, w(0), w(1), w(2));
+	float length =sqrt( w(0)*w(0) + w(1)*w(1) + w(2)*w(2));
 	q_w.normalize();
-	Quaterniond delta_q((q_w.w()*delta_t + 1)*length, q_w.x()*delta_t, q_w.y()*delta_t, q_w.z()*delta_t);
+	Quaternionf delta_q((q_w.w()*delta_t + 1)*length, q_w.x()*delta_t, q_w.y()*delta_t, q_w.z()*delta_t);
 //	cout << "delta_q:" << delta_q.coeffs() << endl;
 	q = delta_q;
 //	cout << "delta_q:" << delta_q.coeffs() << endl;
-	Quaterniond q_new = delta_q * q_old;
+	Quaternionf q_new = delta_q * q_old;
 //	cout << "q_new:" << q_new.coeffs() << endl;
 	q_new.normalize();
 	R = q_new.toRotationMatrix();
 }
-void DynamicFormula::computeNexty( Vector3d y_) {
+void DynamicFormula::computeNexty( Vector3f y_) {
 	temp_deltay = delta_t * y_;
 	y= y + temp_deltay;
 	cout << "(" << y(0) << "," << y(1) << "," << y(2) << ")" << endl;
 }
-VectorXd DynamicFormula::computeNextlp(VectorXd lp, VectorXd lp_) {
+VectorXf DynamicFormula::computeNextlp(VectorXf lp, VectorXf lp_) {
 	return lp + delta_t * lp_;
 }
-void DynamicFormula::computeNextwv(VectorXd lp) {
-	MatrixXd Kneg = K.inverse();
-	VectorXd res=Kneg * lp;
+void DynamicFormula::computeNextwv(VectorXf lp) {
+	MatrixXf Kneg = K.inverse();
+	VectorXf res=Kneg * lp;
 	w = res.block(0, 0, 3, 1);
 	v = res.block(3, 0, 3, 1);
 }
-Vector3d DynamicFormula::vec62Vec31(VectorXd wv) {//也可以用于wv
+Vector3f DynamicFormula::vec62Vec31(VectorXf wv) {//也可以用于wv
 	return wv.block(0, 0, 3, 1);
 }
-Vector3d DynamicFormula::vec62Vec32(VectorXd wv) {
+Vector3f DynamicFormula::vec62Vec32(VectorXf wv) {
 	return wv.block(3, 0, 3, 1);
 }
 
 void DynamicFormula::nextTime() {
-	Matrix3d R_ = computeR_();
-	Vector3d y_ = computey_();
-	VectorXd lp = computelp();
-	VectorXd lp_ = computelp_(lp);
+	Matrix3f R_ = computeR_();
+	Vector3f y_ = computey_();
+	VectorXf lp = computelp();
+	VectorXf lp_ = computelp_(lp);
 	computeNextR(R_);
 	computeNexty(y_);
 	lp=computeNextlp(lp,lp_);
 	computeNextwv(lp);
 }
-void DynamicFormula::set_tsfs(Vector3d ts,Vector3d fs) {
+void DynamicFormula::set_tsfs(Vector3f ts,Vector3f fs) {
 	this->ts = ts;
 	this->fs = fs;
 }

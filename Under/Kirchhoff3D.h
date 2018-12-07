@@ -2,8 +2,8 @@
 class CKirchhoff3D
 {
 public:
-	CKirchhoff3D(double x = 0, double y = 0, double z = 0);
-	CKirchhoff3D(double data[3])
+	CKirchhoff3D(float x = 0, float y = 0, float z = 0);
+	CKirchhoff3D(float data[3])
 	{
 		m_data[0] = data[0];
 		m_data[1] = data[1];
@@ -11,6 +11,6 @@ public:
 	}
 	~CKirchhoff3D(void);
 private:
-	double m_data[3];
+	float m_data[3];
 };
 

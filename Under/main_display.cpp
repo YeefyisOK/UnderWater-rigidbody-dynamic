@@ -16,25 +16,25 @@ using namespace Eigen;
 因为一个定时器只被调用一次，所以需要多次调用定时器
 */
 //obj读取   ../source/yuanpan.obj
-string name = "H:\\MeshData\\bunnyclose.obj";//tuoyuan.obj yuanpan bunnyclose  myprop2
+string name = "H:\\MeshData\\myprop2.obj";//tuoyuan.obj yuanpan bunnyclose  myprop2
 PIC m_pic;
 
 void drawScene();
 //窗口的大小
 GLfloat windowWidth;
 GLfloat windowHeight;
-Vector3d omega(0, 0, 0);
-Vector3d velocity(0, 0, 0);			
-Matrix3d R = Matrix3d::Identity();//设置为单位阵 在init()改不是单位阵
+Vector3f omega(0, 0, 0);
+Vector3f velocity(0, 0, 0);			
+Matrix3f R = Matrix3f::Identity();//设置为单位阵 在init()改不是单位阵
 /*
 R << 0, 1, 0,
 	1, 0, 0,
 	0, 0, 1;*/
-Vector3d y(0,0,20);
-Vector3d ts(0,0,0);
-Vector3d fs(0,0,-10);
-MatrixXd K;
-double delta_t=0.01;
+Vector3f y(0,0,20);
+Vector3f ts(0,0,0);
+Vector3f fs(0,0,-10);
+MatrixXf K;
+float delta_t=0.01;
 
 DynamicFormula m_DF(omega,velocity,R,y,ts,fs,K,delta_t);
 bool mouseLeftDown;
@@ -170,7 +170,7 @@ void GLDraw()
 }
 void init() {
 	/*
-	Vector3d temp = R.row(0);
+	Vector3f temp = R.row(0);
 	R.row(0) = R.row(1);
 	R.row(1) = temp;
 	m_DF.setR(R);*/
@@ -239,7 +239,7 @@ void reshape(int width, int height) {
 	glViewport(0, 0, width, height);      //设置视窗大小 
 	//设置视景体大小 
 	glMatrixMode(GL_PROJECTION);
-	double ratio = (double)width / height;
+	float ratio = (float)width / height;
 	glLoadIdentity();
 	//gluPerspective(60, ratio, 1, 1000);
 	glOrtho(-25, 25, -25, 25, -10, 10);
@@ -307,8 +307,8 @@ void mouseMotionCB(int x, int y)
 int main(int argc, char* argv[]) {
 	glutInit(&argc, argv);    //GLUT 库的初始化 
 	//显示模式初始化：颜色格式——GLUT_RGBA 
-	//           单缓冲或双缓冲——GLUT_SINGLE 或者 GLUT_DOUBLE //          是否使用深度缓存——GLUT_DEPTH  
-	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
+	//           单缓冲或双缓冲——GLUT_SINGLE 或者 GLUT_float //          是否使用深度缓存——GLUT_DEPTH  
+	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE| GLUT_DEPTH);
 	glutInitWindowPosition(100, 100);          //窗口起始位置 
 	glutInitWindowSize(500, 500);             //窗口大小 
 	glutCreateWindow("UnderWaterRidgebody");       //创建窗口并指定窗口的名称 
