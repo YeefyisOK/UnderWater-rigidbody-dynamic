@@ -16,7 +16,7 @@ using namespace Eigen;
 因为一个定时器只被调用一次，所以需要多次调用定时器
 */
 //obj读取   ../source/yuanpan.obj
-string name = "H:\\MeshData\\myprop2.obj";//tuoyuan.obj yuanpan bunnyclose  myprop2
+string name = "H:\\MeshData\\yuanpan.obj";//tuoyuan.obj yuanpan bunnyclose  myprop2
 PIC m_pic;
 
 void drawScene();
