@@ -12,7 +12,7 @@ CKirchhoff::CKirchhoff(PIC m_pic)
 	face[1].resize(numFaces, 3);
 	face[2].resize(numFaces, 3);
 	if (m_pic.V.size() > 0) {
-#pragma omp parallel
+#pragma omp parallel for
 		for (int i = 0; i < numPoints; i++) {
 			Vector3f temp(3);
 			temp(0) = m_pic.V[i].X;
@@ -21,12 +21,13 @@ CKirchhoff::CKirchhoff(PIC m_pic)
 			vertex.row(i) = temp.transpose();//赋值顶点矩阵
 		}
 	}
-	if (m_pic.F.size() > 0) {
-#pragma omp parallel
+//	cout << "vertex=" << vertex << endl;
+	if (m_pic.VN.size() > 0) {
+		/*
 		for (int j = 0;j < numPoints; j++) {
 			Vector3f sum(0,0,0);
 			int k = 0;
-#pragma omp parallel
+#pragma omp parallel for
 			for (int i = 0; i < numFaces; i++){
 				if (m_pic.F[i].V[0] == j) {
 					int index_N0 = m_pic.F[i].N[0];
@@ -46,22 +47,31 @@ CKirchhoff::CKirchhoff(PIC m_pic)
 					sum = sum + temp;
 					k++;
 				}
-				/*
-				if (m_pic.F[i].V[0] == j|| m_pic.F[i].V[1] == j || m_pic.F[i].V[2] == j) {
-					int index_N0 = m_pic.F[i].N[0];
-					//int index_N1 = m_pic.F[i].N[1];
-					//int index_N2 = m_pic.F[i].N[2];
-					Vector3f temp(m_pic.VN[index_N0].NX, m_pic.VN[index_N0].NY, m_pic.VN[index_N0].NZ);
-					sum = sum + temp;
-					k++;
-				}*/				
+				
+				//if (m_pic.F[i].V[0] == j|| m_pic.F[i].V[1] == j || m_pic.F[i].V[2] == j) {
+				//	int index_N0 = m_pic.F[i].N[0];
+				//	//int index_N1 = m_pic.F[i].N[1];
+				//	//int index_N2 = m_pic.F[i].N[2];
+				//	Vector3f temp(m_pic.VN[index_N0].NX, m_pic.VN[index_N0].NY, m_pic.VN[index_N0].NZ);
+				//	sum = sum + temp;
+				//	k++;
+				//}			
 			}
 			sum(0) = sum(0) / k;
 			sum(1) = sum(1) / k;
 			sum(2) = sum(2) / k;
 			normal.row(j) = sum.transpose();
-		}		
+		}		*/
+		for (int i = 0;i < numPoints;i++) {
+			Vector3f temp(3);
+			temp(0) = m_pic.VN[i].NX;
+			temp(1) = m_pic.VN[i].NY;
+			temp(2) = m_pic.VN[i].NZ;
+			//Vector3f temp(m_pic.VN[i].NX, m_pic.VN[i].NY, m_pic.VN[i].NZ);
+			normal.row(i) = temp.transpose();
+		}
 	}
+//	cout << "normal=" << normal << endl;
 	if (m_pic.F.size() > 0) {
 		for (int k = 0; k < 3; k++){//第几行
 			for (int i = 0; i < numFaces; i++){
@@ -120,7 +130,7 @@ MatrixXf CKirchhoff::computeKF(float offset){
 MatrixXf CKirchhoff::single_layer(MatrixXf S , MatrixXf C){
 	MatrixXf res(numFaces, numPoints);
 	for (int i = 0; i < numFaces; i++){//C Z
-#pragma omp parallel
+#pragma omp parallel for
 		for (int j = 0;j < numPoints;j++) {//S
 			Vector3f temp = (C.row(i) - S.row(j)).transpose();
 			float isZero = sqrt(temp.dot(temp));
@@ -180,7 +190,7 @@ MatrixXf CKirchhoff::one_point_quadrature(){
 	MatrixXf VF = face_center();
 	MatrixXf NF = face_normal();
 	MatrixXf CR(numFaces, 3);
-#pragma omp parallel
+#pragma omp parallel for
 	for (int i = 0;i < numFaces;i++) {
 		Vector3f tempVF = VF.row(i).transpose();
 		Vector3f tempNF = NF.row(i).transpose();
@@ -204,7 +214,7 @@ MatrixXf CKirchhoff::angular_vector(){
 	MatrixXf pp1(numFaces, 1);
 	MatrixXf pp2(numFaces, 1);
 	MatrixXf pp3(numFaces, 1);
-#pragma omp parallel
+#pragma omp parallel for
 	for (int i = 0; i < numFaces; i++){
 		pp1(i, 0) = face[0].row(i).dot(face[0].row(i));
 		pp2(i, 0) = face[1].row(i).dot(face[1].row(i));
@@ -214,7 +224,7 @@ MatrixXf CKirchhoff::angular_vector(){
 	MatrixXf pp12(numFaces, 1);
 	MatrixXf pp23(numFaces, 1);
 	MatrixXf pp31(numFaces, 1);
-#pragma omp parallel
+#pragma omp parallel for
 	for (int i = 0; i < numFaces; i++){
 		pp12(i, 0) = face[0].row(i).dot(face[1].row(i));
 		pp23(i, 0) = face[2].row(i).dot(face[1].row(i));
@@ -230,7 +240,7 @@ MatrixXf CKirchhoff::angular_vector(){
 	MatrixXf t1(numFaces, 3);
 	MatrixXf t2(numFaces, 3);
 	MatrixXf t3(numFaces, 3);
-#pragma omp parallel
+#pragma omp parallel for
 	for (int i = 0;i < numFaces;i++) {
 
 		t1(i, 2) = p12(i, 0)*p2p1.col(2)(i, 0);//abort!!!
@@ -271,7 +281,6 @@ MatrixXf CKirchhoff::area_vector(){
 		Vector3f p2 = face[1].row(i);
 		Vector3f p3 = face[2].row(i);
 
-
 		Vector3f temp = 0.5*(p1.cross(p2) + p2.cross(p3) + p3.cross(p1));
 		AV.row(i) = temp.transpose();
 	}
@@ -288,10 +297,10 @@ MatrixXf CKirchhoff::area_vector(){
 }
 MatrixXf CKirchhoff::solid_angle(MatrixXf src){//numPoints*3
 	MatrixXf res(numFaces, numPoints);
-	cout << "S=" << src << endl;
+//	cout << "S=" << src << endl;
 //	MatrixXf FacePoint(numFaces, 3);
 	for (int i = 0; i < numFaces; i++){
-#pragma omp parallel
+#pragma omp parallel for
 		for (int j = 0; j < numPoints; j++){
 			Vector3f R1 = (face[0].row(i) - src.row(j)).transpose();
 			Vector3f R2 = (face[1].row(i) - src.row(j)).transpose();
@@ -339,7 +348,7 @@ Matrix3f CKirchhoff::comuputeJ() {
 	float g0x = 0, g1x = 0, g2x = 0;
 	float g0y = 0, g1y = 0, g2y = 0;
 	float g0z = 0, g1z = 0, g2z = 0;
-#pragma omp parallel
+#pragma omp parallel for
 	for (int t = 0; t < numFaces; t++) { // get vertices of triangle t 
 		/*
 		i0 = index[3*t]; 	i1 = index[3*t+1];		i2 = index[3*t+2];
@@ -401,7 +410,7 @@ MatrixXf CKirchhoff::computeKB(float m) {
 }
 MatrixXf CKirchhoff::computeK(){
 	MatrixXf KB = computeKB(5.0f);//mass
-	MatrixXf KF = computeKF(0.01);//offest 不同的模型需要修改 避免源点跑出去
+//	MatrixXf KF = computeKF(0.01);//offest 不同的模型需要修改 避免源点跑出去
 	//MatrixXf temp = KF.rowwise().sum();
 	/*
 	float a = KB[0]; //temp(0, 0);
@@ -424,7 +433,7 @@ MatrixXf CKirchhoff::computeK(){
 	KF(4, 4) = 4.7054;
 	KF(5, 5) = 1.8585;
 	cout << "KB:" << KB << endl;*/
-	MatrixXf Kirchhoff = KB + KF;
+	MatrixXf Kirchhoff = KB;//+ KF;
 	cout << "KB:" << KB << endl;
 	cout << "Kirchhoff:" << Kirchhoff << endl;
 	return Kirchhoff;

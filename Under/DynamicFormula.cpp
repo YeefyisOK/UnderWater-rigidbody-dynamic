@@ -50,10 +50,11 @@ VectorXf DynamicFormula::tsfs2tf(Matrix3f R, Matrix3f Y){
 	tsfs(5) = fs(2);*/	
 	return trans * tsfs;
 }
+/*
 Matrix3f DynamicFormula::computeR_() {
 	Matrix3f daOmega = toDaOmegaOrY(w);
 	return R * daOmega;
-}
+}*/
 Vector3f DynamicFormula::computey_() {
 	return R * v;
 }
@@ -63,7 +64,7 @@ VectorXf DynamicFormula::computelp() {
 	wv.block(3, 0, 3, 1) = v;
 	return K * wv;
 }
-VectorXf DynamicFormula::computelp_(VectorXf lp) {
+VectorXf DynamicFormula::computelp_() {
 	Matrix3f Y = toDaOmegaOrY(y);
 	VectorXf tf= tsfs2tf(R, Y);
 	Vector3f l = vec62Vec31(lp);
@@ -75,30 +76,71 @@ VectorXf DynamicFormula::computelp_(VectorXf lp) {
 	ab.block(3, 0, 3, 1) = b;
 	return ab + tf;
 }
-void DynamicFormula::computeNextR(Matrix3f R_) {
-//	cout << "R_=" << R_ << endl;
-//	cout << "R=" << R << endl;
-	Quaternionf q_old(R);//可以构造函数 也可以直接赋值
-	q_old.normalize();
-//	cout << "q_old:" << q_old.coeffs() << endl;
-	Quaternionf q_w(0, w(0), w(1), w(2));
-	float length =sqrt( w(0)*w(0) + w(1)*w(1) + w(2)*w(2));
+void DynamicFormula::computeNextR() {
+	/*
+	cout << "q_old:" << q.coeffs() << endl;
+	Quaternionf q_w(0, w(0)*delta_t, w(1)*delta_t, w(2)*delta_t);
+	float length = sqrt(w(0)*w(0) + w(1)*w(1) + w(2)*w(2));
 	q_w.normalize();
-	Quaternionf delta_q((q_w.w()*delta_t + 1)*length, q_w.x()*delta_t, q_w.y()*delta_t, q_w.z()*delta_t);
-//	cout << "delta_q:" << delta_q.coeffs() << endl;
-	q = delta_q;
-//	cout << "delta_q:" << delta_q.coeffs() << endl;
-	Quaternionf q_new = delta_q * q_old;
-//	cout << "q_new:" << q_new.coeffs() << endl;
-	q_new.normalize();
-	R = q_new.toRotationMatrix();
+	Quaternionf delta_q(delta_t*length, q_w.x(), q_w.y(), q_w.z());
+	q = delta_q * q;
+	q.normalize();
+	R = q.toRotationMatrix();
+	cout << "R:" << R << endl;*/
+	cout << "q_old:" << q.coeffs() << endl;
+	Quaternionf q_w(0, w(0)*delta_t, w(1)*delta_t, w(2)*delta_t);
+	q_w *= q;
+	q_w.w() = q_w.w()*0.5;
+	q_w.x() = q_w.x()*0.5;
+	q_w.y() = q_w.y()*0.5;
+	q_w.z() = q_w.z()*0.5;
+	Quaternionf delta_q=q_w;//以上是算delta_q
+	delta_q.normalize();
+	temp_rotate = delta_q.toRotationMatrix();//delta_q转化为矩阵 display中与栈顶矩阵相乘（转4*4）
+	cout <<"temp_rotate="<< temp_rotate << endl;
+	q = delta_q * q ;//计算经过旋转后的orientation 
+	q.normalize();
+	R = q.toRotationMatrix();
+	cout << "R:" << R << endl;
+	/*
+	Quaternionf q_w(0, w(0)*delta_t, w(1)*delta_t, w(2)*delta_t);
+	Quaternionf delta_q(q_w.w()+ 1, q_w.x()/2, q_w.y()/2, q_w.z()/2);
+	temp_rotate = delta_q.toRotationMatrix();
+	q = delta_q * q;
+	q.normalize();
+	R = q.toRotationMatrix();
+	cout << "R:" << R << endl;*/
+}
+float* DynamicFormula::GetRotationData() {
+	float data[16];
+	data[0] = temp_rotate(0,0);
+	data[1] = temp_rotate(1,0);
+	data[2] = temp_rotate(2,0);
+	data[3] = y(0);
+
+	data[4] = temp_rotate(0,1);
+	data[5] = temp_rotate(1,1);
+	data[6] = temp_rotate(2,1);
+	data[7] = y(1);
+
+	data[8] = temp_rotate(0,2);
+	data[9] = temp_rotate(1,2);
+	data[10] = temp_rotate(2,2);
+	data[11] = y(2);
+
+	data[12] = 0;
+	data[13] = 0;
+	data[14] = 0;
+	data[15] = 1;
+
+	return data;
 }
 void DynamicFormula::computeNexty( Vector3f y_) {
 	temp_deltay = delta_t * y_;
 	y= y + temp_deltay;
 	cout << "(" << y(0) << "," << y(1) << "," << y(2) << ")" << endl;
 }
-VectorXf DynamicFormula::computeNextlp(VectorXf lp, VectorXf lp_) {
+VectorXf DynamicFormula::computeNextlp() {
 	return lp + delta_t * lp_;
 }
 void DynamicFormula::computeNextwv(VectorXf lp) {
@@ -115,14 +157,17 @@ Vector3f DynamicFormula::vec62Vec32(VectorXf wv) {
 }
 
 void DynamicFormula::nextTime() {
-	Matrix3f R_ = computeR_();
 	Vector3f y_ = computey_();
-	VectorXf lp = computelp();
-	VectorXf lp_ = computelp_(lp);
-	computeNextR(R_);
+	lp = computelp();//只要计算初始的lp,不用每次计算lp
+	computeNextR();
 	computeNexty(y_);
-	lp=computeNextlp(lp,lp_);
+	cout << "y:" << y << endl;
+	lp_ = computelp_();
+	lp=computeNextlp();
+	cout << "lp:" << lp << endl;
 	computeNextwv(lp);
+	cout << "w:"<<w(0)<<" " << w(1) << " " << w(2) << endl;
+	cout << "v:"<<v(0) << " " << v(1) << " " << v(2) << endl;
 }
 void DynamicFormula::set_tsfs(Vector3f ts,Vector3f fs) {
 	this->ts = ts;
