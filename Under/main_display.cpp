@@ -3,6 +3,7 @@
 #include<sstream> 
 #include<GL/glut.h>
 #include<stdio.h>
+#include<string>
 #include"Kirchhoff.h"
 #include "PIC.h"
 #include"DynamicFormula.h"
@@ -16,6 +17,9 @@ using namespace Eigen;
 因为一个定时器只被调用一次，所以需要多次调用定时器
 */
 //obj读取   ../source/yuanpan.obj
+int id = 0;
+long imagewidth = 600;
+long imageheight = 800;
 string name = "H:\\MeshData\\cube.obj";//tuoyuan.obj yuanpan20 bunnyclose  myprop2
 PIC m_pic;
 void drawScene();
@@ -27,9 +31,9 @@ Vector3f velocity(0, 0, 0);
 Matrix3f R = Matrix3f::Identity();//设置为单位阵 在init()改不是单位阵
 Vector3f y(0,0,0);
 Vector3f ts(0,0,0);
-Vector3f fs(0,0,-50);
+Vector3f fs(0,0,-10);
 MatrixXf K;
-float delta_t=1;
+float delta_t=0.1;
 
 DynamicFormula m_DF(omega,velocity,R,y,ts,fs,K,delta_t);
 bool mouseLeftDown;
@@ -104,6 +108,58 @@ void ReadPIC()
 		}
 	}
 }
+void ScreenShot(const char* imagefilepath)
+{
+	GLint pView[4];
+	glGetIntegerv(GL_VIEWPORT, pView);//得到视图矩阵,pView[2]为宽即width,pView[3]为高即height
+
+	GLsizei numComponet = 3;
+	GLsizei bufferSize = pView[2] * pView[3] * sizeof(GLfloat)*numComponet;
+
+	GLfloat* _data = new GLfloat[bufferSize];
+	unsigned char*  data = new unsigned char[bufferSize];
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 4);//设置4字节对齐
+	glReadBuffer(GL_FRONT);
+	glReadPixels(pView[0], pView[1], pView[2], pView[3], GL_BGR_EXT, GL_FLOAT, _data);//不是GL_RGB的读取方式，而是GL_BGR或者GL_BGR_Ext
+	glReadBuffer(GL_BACK);
+	for (int i = 0; i < bufferSize; i++)
+	{
+		data[i] = _data[i] * 255;
+	}
+	BITMAPFILEHEADER fileHeader;
+	BITMAPINFOHEADER infoHeader;
+	infoHeader.biSize = 40;
+	infoHeader.biWidth = imagewidth;
+	infoHeader.biHeight = imageheight;
+	infoHeader.biPlanes = 1;
+	infoHeader.biBitCount = 24;
+	infoHeader.biCompression = BI_RGB;
+	infoHeader.biSizeImage = pView[2] * pView[3] * 3;
+	infoHeader.biXPelsPerMeter = 0;
+	infoHeader.biYPelsPerMeter = 0;
+	infoHeader.biClrUsed = 0;
+	infoHeader.biClrImportant = 0;
+	fileHeader.bfType = 0x4D42;
+	fileHeader.bfReserved1 = 0;
+	fileHeader.bfReserved2 = 0;
+	fileHeader.bfOffBits = 54;
+	fileHeader.bfSize = (DWORD)(sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) + pView[2] * pView[3] * 3);
+	FILE *fd;
+	if (fopen_s(&fd, imagefilepath, "wb+") != 0)//filepath为你所保存文件的名字
+	{
+		cout << "bmp图片申请出错"<< imagefilepath;
+		exit(0);
+	}
+	else
+	{
+		fwrite(&fileHeader, 1, sizeof(BITMAPFILEHEADER), fd);
+		fwrite(&infoHeader, 1, sizeof(BITMAPINFOHEADER), fd);
+		fwrite(data, 1, pView[2] * pView[3] * 3, fd);
+		fclose(fd);
+	}
+	delete[] data;
+	delete[] _data;
+}
 void GLDraw()
 {													
 	glColor3f(0.0, 1.0, 0.0);     //绿
@@ -143,6 +199,7 @@ void init() {
 	//基尔霍夫张量
 	CKirchhoff m_K(m_pic);
 	K = m_K.computeK();//初始时得到K矩阵
+
 	m_DF.q = R;
 	m_DF.setK(K);
 	m_DF.lp=	m_DF.computelp();//计算初始的lp
@@ -152,7 +209,7 @@ void init() {
 	glClearDepth(1.0);                    //设置深度缓存的初始值 
 	glDepthFunc(GL_LEQUAL);           //深度测试的方法 
 	glEnable(GL_DEPTH_TEST);          //启用深度测试
-	GLfloat direction[] = { -3.0f, -3.4f, -8.8f, 0.0f }; // 平行光源, GL_POSITION属性的最后一个参数为0
+	GLfloat direction[] = { 3.0, -3.4f, 8.8f, 0.0f }; // 平行光源, GL_POSITION属性的最后一个参数为0
 	GLfloat ambient[] = { 0.3f, 0.3f, 0.3f, 1.0f };  // 环境强度
 	GLfloat diffuse[] = { 1.0f, 1.0f, 1.0f, 1.0f };  // 散射强度
 	GLfloat specular[] = { 1.0f, 1.0f, 1.0f, 1.0f }; // 镜面强度
@@ -196,10 +253,11 @@ void drawScene()           //绘制
 	if (mouseRightDown ) {
 		glTranslatef(0, 0, -cameraDistance*0.1);
 	}
-	/*
-	glTranslated(m_DF.temp_deltay(0), m_DF.temp_deltay(1), m_DF.temp_deltay(2));*/
-	glMultMatrixf(m_DF.GetRotationData());
-	//glRotated(m_DF.delta_q.w(), m_DF.delta_q.x(), m_DF.delta_q.y(), m_DF.delta_q.z());
+	
+	float *pData = m_DF.GetRotationData();
+	//glMultMatrixf(pData);
+	glTranslated(m_DF.temp_deltay(0), m_DF.temp_deltay(1), m_DF.temp_deltay(2));
+	glRotated(m_DF.delta_q.w(), m_DF.delta_q.x(), m_DF.delta_q.y(), m_DF.delta_q.z());
 	GLDraw();
 }
 //窗口大小发生变化时的响应函数 
@@ -221,7 +279,6 @@ void reshape(int width, int height) {
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 	gluLookAt(2, 0, 0, 0, 0, 0, 0, 0, 1);//4, 0, -2,
-
 }
 
 void TimerFunction(int value)
@@ -233,7 +290,19 @@ void TimerFunction(int value)
 	窗口显示将被回调以重新显示窗口的正常面板。多次调用glutPostRedisplay，
 	在下一个显示回调只产生单一的重新显示回调
 	*/
+	id++;
+	char b[4];
+	for (int i = 00;i < 4;i++)
+	{
+		b[i] = (char)id;
+		id = id >> 8;
+	}
 	glutPostRedisplay(); //标志重新绘制
+	string s = "H:\\MeshData\\images\\0001.bmp";
+//	s = s + b[0] + b[1] + b[2] + b[3];
+//	s+=".bmp";
+	const char *imagefilepath = s.data();
+	//ScreenShot(imagefilepath);
 	glutTimerFunc(delta_t*1000, TimerFunction, 1);
 }
 void mouseCB(int button, int state, int x, int y)

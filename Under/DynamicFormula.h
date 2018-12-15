@@ -21,15 +21,15 @@ public:
 		R = newR;
 	}
 	Matrix3f toDaOmegaOrY(Vector3f omega);
-	VectorXf tsfs2tf(Matrix3f R, Matrix3f Y);
+	VectorXf tsfs2tf(Matrix3f Y);
 	//Matrix3f computeR_();
 	Vector3f computey_();
 	VectorXf computelp();
 	VectorXf computelp_();
-	void computeNextR();
-	void computeNexty(Vector3f y_);
+	Matrix3f computeNextR();
+	Vector3f computeNexty(Vector3f y_);
 	VectorXf computeNextlp();
-	void computeNextwv(VectorXf lp);
+	VectorXf computeNextwv();
 	Vector3f vec62Vec31(VectorXf ab);
 	Vector3f vec62Vec32(VectorXf ab);
 	void nextTime();
@@ -52,7 +52,7 @@ public:
 	float delta_t;
 	//平移旋转需要的两个参数
 	Quaternionf delta_q;
-	Matrix3f temp_rotate;
+	Matrix3f temp_rotate = Matrix3f::Identity();
 	Vector3f temp_deltay;
 
 };
