@@ -27,11 +27,11 @@ void drawScene();
 GLfloat windowWidth;
 GLfloat windowHeight;
 Vector3f omega(	1, 0, 0);
-Vector3f velocity(0, 0, 0);			
+Vector3f velocity(0, 1, 0);			
 Matrix3f R = Matrix3f::Identity();//设置为单位阵 在init()改不是单位阵
 Vector3f y(0,0,0);
 Vector3f ts(0,0,0);
-Vector3f fs(0,0,-10);
+Vector3f fs(0,0,0);
 MatrixXf K;
 float delta_t=0.1;
 

@@ -181,9 +181,9 @@ void DynamicFormula::nextTime() {
 	cout << "v:"<<v(0) << " " << v(1) << " " << v(2) << endl;
 	Vector3f y_ = computey_();
 	cout << "y_" << y_ << endl;
-	computeNexty(y_);
+	y=computeNexty(y_);
 	cout << "y:" << y << endl;
-	computeNextR();
+	R=computeNextR();
 	w = tempwv.block(0, 0, 3, 1);
 	v = tempwv.block(3, 0, 3, 1);
 	cout << "w:" << w(0) << " " << w(1) << " " << w(2) << endl;
