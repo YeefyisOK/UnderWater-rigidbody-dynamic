@@ -30,22 +30,17 @@ Matrix3f DynamicFormula::toDaOmegaOrY(Vector3f omega) {
 }
 VectorXf DynamicFormula::tsfs2tf( Matrix3f Y) {
 	Matrix3f Rt = R.transpose();
-	cout << "RT" << Rt << endl;
-	cout << "R-1" << R.inverse() << endl;
 	Matrix3f zero = Matrix3f::Zero();
 	//zero.setZero(3, 3);
 	Matrix3f negRtY = zero - Rt * Y;
-	cout << "negRtY" << negRtY << endl;
 	MatrixXf trans(6, 6);//¾ØÕó·Ö¿é¸³Öµ
 	trans.block(0, 0, 3, 3) = Rt;
 	trans.block(0, 3, 3, 3) = negRtY;
 	trans.block(3, 0, 3, 3) = zero;
 	trans.block(3, 3, 3, 3) = Rt;
-	cout << "trans" << trans << endl;
 	VectorXf tsfs(6);
 	tsfs.block(0, 0, 3, 1) = ts;
 	tsfs.block(3, 0, 3, 1) = fs;
-	cout << "tsfs" << tsfs << endl;
 	/*
 	tsfs(0) = ts(0);
 	tsfs(1) = ts(1);
@@ -121,9 +116,8 @@ Matrix3f DynamicFormula::computeNextR() {
 	R = q.toRotationMatrix();
 	cout << "R:" << R << endl;*/
 }
-
 float* DynamicFormula::GetRotationData() {
-	static float data[16];
+	static float data[16];//!!!!
 	data[0] = R(0,0);
 	data[1] = R(1,0);
 	data[2] = R(2,0);
@@ -139,14 +133,15 @@ float* DynamicFormula::GetRotationData() {
 	data[10] = R(2,2);
 	data[11] = 0;
 
-	data[12] = y(0);
-	data[13] = y(1);
-	data[14] = y(2);
+	data[12] = 0;
+	data[13] = 0;
+	data[14] = 0;
 	data[15] = 1;
 	return data;
 }
 Vector3f DynamicFormula::computeNexty( Vector3f y_) {
 	temp_deltay = delta_t  * y_;
+	cout << "temp_deltay" << temp_deltay << endl;
 	cout << "(" << y(0) << "," << y(1) << "," << y(2) << ")" << endl;
 	return y + temp_deltay;
 }
@@ -169,22 +164,22 @@ Vector3f DynamicFormula::vec62Vec32(VectorXf wv) {
 
 void DynamicFormula::nextTime() {
 	lp_ = computelp_();
-	cout << "lp_:" << lp_ << endl;
+	//cout << "lp_:" << lp_ << endl;
 	lp=computeNextlp();//lp
-	cout << "lp:" << lp << endl;
+	//cout << "lp:" << lp << endl;
 	VectorXf tempwv= computeNextwv();
-	cout << "w:"<<w(0)<<" " << w(1) << " " << w(2) << endl;
-	cout << "v:"<<v(0) << " " << v(1) << " " << v(2) << endl;
+	//cout << "w:"<<w(0)<<" " << w(1) << " " << w(2) << endl;
+	//cout << "v:"<<v(0) << " " << v(1) << " " << v(2) << endl;
 	Vector3f y_ = computey_();
-	cout << "y_" << y_ << endl;
+	//cout << "y_" << y_ << endl;
 	y=computeNexty(y_);//y
-	cout << "y:" << y << endl;
+	//cout << "y:" << y << endl;
 	R=computeNextR();//R
-	cout << "R:" << R << endl;
+	//cout << "R:" << R << endl;
 	w = tempwv.block(0, 0, 3, 1);//w
 	v = tempwv.block(3, 0, 3, 1);//v
-	cout << "w:" << w(0) << " " << w(1) << " " << w(2) << endl;
-	cout << "v:" << v(0) << " " << v(1) << " " << v(2) << endl;
+	//cout << "w:" << w(0) << " " << w(1) << " " << w(2) << endl;
+	//cout << "v:" << v(0) << " " << v(1) << " " << v(2) << endl;
 }
 void DynamicFormula::set_tsfs(Vector3f ts,Vector3f fs) {
 	this->ts = ts;
