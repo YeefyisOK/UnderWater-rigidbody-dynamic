@@ -40,7 +40,7 @@ public:
 	//初始时刻的 6+1个量
 	Vector3f w;
 	Vector3f v;
-	Matrix3f R; //R初始化一个正交矩阵
+	Matrix3f R;//R初始化一个正交矩阵
 	Quaternionf q;//R转化四元数
 	Vector3f y;
 	Vector3f ts;
@@ -52,7 +52,7 @@ public:
 	float delta_t;
 	//平移旋转需要的两个参数
 	Quaternionf delta_q;
-	Matrix3f temp_rotate = Matrix3f::Identity();
+	double theta;
 	Vector3f temp_deltay;
 
 };

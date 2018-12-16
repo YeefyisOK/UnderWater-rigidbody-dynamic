@@ -53,7 +53,7 @@ VectorXf DynamicFormula::tsfs2tf( Matrix3f Y) {
 	tsfs(3) = fs(0);
 	tsfs(4) = fs(1);
 	tsfs(5) = fs(2);*/
-	return trans * tsfs;
+	return trans * tsfs;	
 }
 /*
 Matrix3f DynamicFormula::computeR_() {
@@ -72,16 +72,11 @@ VectorXf DynamicFormula::computelp() {
 VectorXf DynamicFormula::computelp_() {
 	Matrix3f Y = toDaOmegaOrY(y);
 	VectorXf tf = tsfs2tf(Y);
-	cout << "tf" << tf << endl;
 	Vector3f l = vec62Vec31(lp);
 	Vector3f p = vec62Vec32(lp);
-	cout << "L" << l << endl;
-	cout << "P" << p << endl;
 	Vector3f a = l.cross(w) + p.cross(v);
-	cout << "A" << a << endl;
 	Vector3f b = p.cross(w);
-	cout << "B" << b << endl;
-		VectorXf ab(6);
+	VectorXf ab(6);
 	ab.block(0, 0, 3, 1) = a;
 	ab.block(3, 0, 3, 1) = b;
 	return ab + tf;
@@ -89,6 +84,7 @@ VectorXf DynamicFormula::computelp_() {
 Matrix3f DynamicFormula::computeNextR() {
 	cout << "q:" << q.coeffs() << endl;
 	float length = sqrt(w(0)*w(0) + w(1)*w(1) + w(2)*w(2));
+	theta = delta_t * length;
 	float q0 = cos(delta_t*length / 2);
 	float genhao = sin(delta_t*length / 2);
 	float q1, q2, q3;
@@ -103,7 +99,7 @@ Matrix3f DynamicFormula::computeNextR() {
 	Quaternionf tempq(q0, q1, q2, q3);
 	delta_q = tempq;
 	cout << "delta_q:" << delta_q.coeffs() << endl;
-	temp_rotate = delta_q.toRotationMatrix();
+	//temp_rotate *= delta_q.toRotationMatrix();
 	q = delta_q * q;//计算经过旋转后的orientation 
 	q.normalize();
 	return q.toRotationMatrix();
@@ -125,28 +121,28 @@ Matrix3f DynamicFormula::computeNextR() {
 	R = q.toRotationMatrix();
 	cout << "R:" << R << endl;*/
 }
+
 float* DynamicFormula::GetRotationData() {
-	float data[16];
-	data[0] = temp_rotate(0,0);
-	data[1] = temp_rotate(1,0);
-	data[2] = temp_rotate(2,0);
+	static float data[16];
+	data[0] = R(0,0);
+	data[1] = R(1,0);
+	data[2] = R(2,0);
 	data[3] = 0;
 
-	data[4] = temp_rotate(0,1);
-	data[5] = temp_rotate(1,1);
-	data[6] = temp_rotate(2,1);
+	data[4] = R(0,1);
+	data[5] = R(1,1);
+	data[6] = R(2,1);
 	data[7] = 0;
 
-	data[8] = temp_rotate(0,2);
-	data[9] = temp_rotate(1,2);
-	data[10] = temp_rotate(2,2);
+	data[8] = R(0,2);
+	data[9] = R(1,2);
+	data[10] = R(2,2);
 	data[11] = 0;
 
-	data[12] = 0;
-	data[13] = 0;
-	data[14] = 0;
+	data[12] = y(0);
+	data[13] = y(1);
+	data[14] = y(2);
 	data[15] = 1;
-
 	return data;
 }
 Vector3f DynamicFormula::computeNexty( Vector3f y_) {
@@ -174,18 +170,19 @@ Vector3f DynamicFormula::vec62Vec32(VectorXf wv) {
 void DynamicFormula::nextTime() {
 	lp_ = computelp_();
 	cout << "lp_:" << lp_ << endl;
-	lp=computeNextlp();
+	lp=computeNextlp();//lp
 	cout << "lp:" << lp << endl;
 	VectorXf tempwv= computeNextwv();
 	cout << "w:"<<w(0)<<" " << w(1) << " " << w(2) << endl;
 	cout << "v:"<<v(0) << " " << v(1) << " " << v(2) << endl;
 	Vector3f y_ = computey_();
 	cout << "y_" << y_ << endl;
-	y=computeNexty(y_);
+	y=computeNexty(y_);//y
 	cout << "y:" << y << endl;
-	R=computeNextR();
-	w = tempwv.block(0, 0, 3, 1);
-	v = tempwv.block(3, 0, 3, 1);
+	R=computeNextR();//R
+	cout << "R:" << R << endl;
+	w = tempwv.block(0, 0, 3, 1);//w
+	v = tempwv.block(3, 0, 3, 1);//v
 	cout << "w:" << w(0) << " " << w(1) << " " << w(2) << endl;
 	cout << "v:" << v(0) << " " << v(1) << " " << v(2) << endl;
 }

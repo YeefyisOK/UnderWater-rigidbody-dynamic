@@ -20,14 +20,14 @@ using namespace Eigen;
 int id = 0;
 long imagewidth = 600;
 long imageheight = 800;
-string name = "H:\\MeshData\\cube.obj";//tuoyuan.obj yuanpan20 bunnyclose  myprop2
+string name = "H:\\MeshData\\yuanpan20lab.obj";//tuoyuan.obj yuanpan20 bunnyclose  myprop2
 PIC m_pic;
 void drawScene();
 //窗口的大小
 GLfloat windowWidth;
 GLfloat windowHeight;
-Vector3f omega(	1, 0, 0);
-Vector3f velocity(0, 1, 0);			
+Vector3f omega(	5, 0, 0);
+Vector3f velocity(0, 0, -1);			
 Matrix3f R = Matrix3f::Identity();//设置为单位阵 在init()改不是单位阵
 Vector3f y(0,0,0);
 Vector3f ts(0,0,0);
@@ -250,14 +250,22 @@ void display() {
 
 void drawScene()           //绘制
 {
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glLoadIdentity();
+	gluLookAt(2, 0, 0, 0, 0, 0, 0, 0, 1);//4, 0, -2,
+	glPopMatrix();
 	if (mouseRightDown ) {
 		glTranslatef(0, 0, -cameraDistance*0.1);
-	}
-	
+	}	
 	float *pData = m_DF.GetRotationData();
-	//glMultMatrixf(pData);
-	glTranslated(m_DF.temp_deltay(0), m_DF.temp_deltay(1), m_DF.temp_deltay(2));
-	glRotated(m_DF.delta_q.w(), m_DF.delta_q.x(), m_DF.delta_q.y(), m_DF.delta_q.z());
+	cout << pData[0] << " " << pData[4] << " " << pData[8] << " " << pData[12] << endl;
+	cout << pData[1] << " " << pData[5] << " " << pData[9] << " " << pData[13] << endl;
+	cout << pData[2] << " " << pData[6] << " " << pData[10] << " " << pData[14] << endl;
+	cout << pData[3] << " " << pData[7] << " " << pData[11] <<" " << pData[15] << endl;
+	glMultMatrixf(pData);
+	//glTranslated(m_DF.temp_deltay(0), m_DF.temp_deltay(1), m_DF.temp_deltay(2));
+	//glRotated(m_DF.theta, m_DF.delta_q.x(), m_DF.delta_q.y(), m_DF.delta_q.z());
 	GLDraw();
 }
 //窗口大小发生变化时的响应函数 
@@ -276,9 +284,6 @@ void reshape(int width, int height) {
 		glOrtho(-viewsize *(GLfloat)width / (GLfloat)height, viewsize*(GLfloat)width / (GLfloat)height	, -viewsize, viewsize, -10.0, 10.0);
 
 	//glOrtho(-25, 25, -25, 25, -10, 10);
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-	gluLookAt(2, 0, 0, 0, 0, 0, 0, 0, 1);//4, 0, -2,
 }
 
 void TimerFunction(int value)
