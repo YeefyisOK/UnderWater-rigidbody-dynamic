@@ -410,7 +410,7 @@ MatrixXf CKirchhoff::computeKB(float m) {
 }
 MatrixXf CKirchhoff::computeK(){
 	MatrixXf KB = computeKB(5.0f);//mass
-//	MatrixXf KF = computeKF(0.01);//offest 不同的模型需要修改 避免源点跑出去
+	MatrixXf KF = computeKF(0.01);//offest 不同的模型需要修改 避免源点跑出去
 	//MatrixXf temp = KF.rowwise().sum();
 	/*
 	float a = KB[0]; //temp(0, 0);
@@ -433,8 +433,8 @@ MatrixXf CKirchhoff::computeK(){
 	KF(4, 4) = 4.7054;
 	KF(5, 5) = 1.8585;
 	cout << "KB:" << KB << endl;*/
-	KB.setIdentity();
-	MatrixXf Kirchhoff = KB;//+ KF;
+	//KB.setIdentity();
+	MatrixXf Kirchhoff = KB+ KF;//
 	cout << "KB:" << KB << endl;
 	cout << "Kirchhoff:" << Kirchhoff << endl;
 	return Kirchhoff;

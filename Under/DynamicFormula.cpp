@@ -292,8 +292,9 @@ VectorXf DynamicFormula::computeNextlp() {
 	return lp + delta_t * lp_;
 }
 VectorXf DynamicFormula::computeNextwv() {
-	MatrixXf Kneg = K.inverse();
-	VectorXf res=Kneg * lp;
+	MatrixXf Kinv = K.inverse();
+	cout << "Kinv" << Kinv << endl;
+	VectorXf res=Kinv * lp;
 	//w = res.block(0, 0, 3, 1);
 	//v = res.block(3, 0, 3, 1);
 	return res;
@@ -307,10 +308,12 @@ Vector3f DynamicFormula::vec62Vec32(VectorXf wv) {
 
 void DynamicFormula::nextTime() {
 	lp_ = computelp_();
+	cout << "oldlp" << lp << endl;
 	cout << "lp_:" << lp_ << endl;
 	lp=computeNextlp();//lp
 	cout << "lp:" << lp << endl;
 	VectorXf tempwv= computeNextwv();
+	cout << "tempwv" << tempwv << endl;
 	cout << "w:"<<w(0)<<" " << w(1) << " " << w(2) << endl;
 	cout << "v:"<<v(0) << " " << v(1) << " " << v(2) << endl;
 	Vector3f y_ = computey_();

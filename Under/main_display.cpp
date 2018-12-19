@@ -20,20 +20,20 @@ using namespace Eigen;
 int id = 0;
 long imagewidth = 600;
 long imageheight = 800;
-string name = "H:\\MeshData\\tuoyuanlab.obj";//tuoyuan.obj yuanpan20 bunnyclose  myprop2
+string name = "H:\\MeshData\\tuoyuan3lab.obj";//tuoyuan.obj yuanpan20 bunnyclose  myprop2
 PIC m_pic;
 void drawScene();
 //窗口的大小
 GLfloat windowWidth;
 GLfloat windowHeight;
-Vector3f omega(	0, 0, 10);
+Vector3f omega(	0, 0, 0);
 Vector3f velocity(0, 0, 0);			
 Matrix3f R = Matrix3f::Identity();//设置为单位阵 在init()改不是单位阵
 Vector3f y(0,0,0);
 Vector3f ts(0,0,0);
-Vector3f fs(0,0,0);
+Vector3f fs(0,-50,0);
 MatrixXf K;
-float delta_t=0.01;
+float delta_t=0.1;
 
 DynamicFormula m_DF(omega,velocity,R,y,ts,fs,K,delta_t);
 bool mouseLeftDown;
@@ -157,7 +157,7 @@ void init() {
 	glClearDepth(1.0);                    //设置深度缓存的初始值 
 	glDepthFunc(GL_LEQUAL);           //深度测试的方法 
 	glEnable(GL_DEPTH_TEST);          //启用深度测试
-	GLfloat direction[] = { 0, -3.4f, -8.8f, 0.0f }; // 平行光源, GL_POSITION属性的最后一个参数为0
+	GLfloat direction[] = { 0, -3.4f, -8.8f, -1.0f }; // 平行光源, GL_POSITION属性的最后一个参数为0
 	GLfloat ambient[] = { 0.3f, 0.3f, 0.3f, 1.0f };  // 环境强度
 	GLfloat diffuse[] = { 1.0f, 1.0f, 1.0f, 1.0f };  // 散射强度
 	GLfloat specular[] = { 1.0f, 1.0f, 1.0f, 1.0f }; // 镜面强度
@@ -201,16 +201,14 @@ void drawScene()           //绘制
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 	gluLookAt(0, 0, 10, 0, 0, 0, 0, 1, 0);//4, 0, -2,
-	if (mouseRightDown ) {
-		glTranslatef(0,  -cameraDistance,0);
-	}	
+	glTranslatef(0,  -cameraDistance,0);
 	float *pData = m_DF.GetRotAndTransData();
 	//cout << pData[0] << " " << pData[4] << " " << pData[8] << " " << pData[12] << endl;
 	//cout << pData[1] << " " << pData[5] << " " << pData[9] << " " << pData[13] << endl;
 	//cout << pData[2] << " " << pData[6] << " " << pData[10] << " " << pData[14] << endl;
 	//cout << pData[3] << " " << pData[7] << " " << pData[11] <<" " << pData[15] << endl;
 
-	glTranslated(m_DF.y(0), m_DF.y(1), m_DF.y(2));
+	glTranslatef(m_DF.y(0), m_DF.y(1), m_DF.y(2));
 	glMultMatrixf(pData);
 	//glRotated(m_DF.theta, m_DF.delta_q.x(), m_DF.delta_q.y(), m_DF.delta_q.z());
 	GLDraw();
