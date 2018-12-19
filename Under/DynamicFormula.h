@@ -34,8 +34,8 @@ public:
 	Vector3f vec62Vec32(VectorXf ab);
 	void nextTime();
 	void set_tsfs(Vector3f ts,Vector3f fs);
-	float* GetRotationData();
-
+	float* GetRotAndTransData();
+	Matrix3f s_GetRotaionMatrix(float angle, const Vector3f &axis);
 //private:
 	//初始时刻的 6+1个量
 	Vector3f w;
@@ -52,7 +52,6 @@ public:
 	float delta_t;
 	//平移旋转需要的两个参数
 	Quaternionf delta_q;
-	double theta;
-	Vector3f temp_deltay;
+	float theta;
 
 };

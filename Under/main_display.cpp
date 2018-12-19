@@ -39,7 +39,7 @@ DynamicFormula m_DF(omega,velocity,R,y,ts,fs,K,delta_t);
 bool mouseLeftDown;
 bool mouseRightDown;
 float mouseX, mouseY;
-float cameraDistance;
+float cameraDistance=0;
 float cameraAngleX;
 float cameraAngleY;
 void ReadPIC()
@@ -199,20 +199,19 @@ void display() {
 void drawScene()           //绘制
 {
 	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
 	glLoadIdentity();
-	gluLookAt(0, 0, 0, 0, 0, 0, 0, 0, 1);//4, 0, -2,
-	glPopMatrix();
+	gluLookAt(0, 0, 10, 0, 0, 0, 0, 1, 0);//4, 0, -2,
 	if (mouseRightDown ) {
-		glTranslatef(0, 0, -cameraDistance*0.1);
+		glTranslatef(0,  -cameraDistance,0);
 	}	
-	float *pData = m_DF.GetRotationData();
-	cout << pData[0] << " " << pData[4] << " " << pData[8] << " " << pData[12] << endl;
-	cout << pData[1] << " " << pData[5] << " " << pData[9] << " " << pData[13] << endl;
-	cout << pData[2] << " " << pData[6] << " " << pData[10] << " " << pData[14] << endl;
-	cout << pData[3] << " " << pData[7] << " " << pData[11] <<" " << pData[15] << endl;
+	float *pData = m_DF.GetRotAndTransData();
+	//cout << pData[0] << " " << pData[4] << " " << pData[8] << " " << pData[12] << endl;
+	//cout << pData[1] << " " << pData[5] << " " << pData[9] << " " << pData[13] << endl;
+	//cout << pData[2] << " " << pData[6] << " " << pData[10] << " " << pData[14] << endl;
+	//cout << pData[3] << " " << pData[7] << " " << pData[11] <<" " << pData[15] << endl;
+
+	glTranslated(m_DF.y(0), m_DF.y(1), m_DF.y(2));
 	glMultMatrixf(pData);
-	glTranslated(m_DF.temp_deltay(0), m_DF.temp_deltay(1), m_DF.temp_deltay(2));
 	//glRotated(m_DF.theta, m_DF.delta_q.x(), m_DF.delta_q.y(), m_DF.delta_q.z());
 	GLDraw();
 }
@@ -277,8 +276,8 @@ void mouseMotionCB(int x, int y)
 {
 	if (mouseRightDown)
 	{
-		cameraDistance = 0;
-		cameraDistance += (y - mouseY) * 0.2f;
+		//cameraDistance = 0;
+		cameraDistance += (y - mouseY) * 0.02f;
 		mouseY = y;
 	}
 	glutPostRedisplay();
@@ -300,7 +299,7 @@ int main(int argc, char* argv[]) {
 	glutDisplayFunc(display);               //设置窗口重绘时的响应函数 
 	glutReshapeFunc(reshape);              //设置窗口大小发生变化时的响应函数 
 
-	//定时器  每500毫秒触发一次
+	//定时器  每delta_t*1000毫秒触发一次
 	glutTimerFunc(delta_t*1000, TimerFunction, 1);
 
 	glutMainLoop();                   //消息循环：获取消息，分发消息，响应消息 
