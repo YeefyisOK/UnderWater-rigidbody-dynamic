@@ -19,8 +19,12 @@ public:
 	MatrixXf vertex ;//= MatrixXf::Random(3, 3)
 	MatrixXf normal ;//= MatrixXf::Random(3, 3)
 	MatrixXf face[3] ;
+	float bodyMass;//computeJ得到了mass
+	float bodyDensity;
+	float fluidDensity;
+	float volume;
 
-	CKirchhoff(PIC m_pic);
+	CKirchhoff(PIC m_pic,float m_bodyDensity,float m_fluidDensity);
 	MatrixXf angular_vector();
 	float area();
 	MatrixXf triangle_area();
@@ -36,7 +40,7 @@ public:
 	void Subexpressions(float &w0, float &w1, float &w2,
 		float &f1, float &f2, float &f3, float &g0, float &g1, float &g2);
 	Matrix3f comuputeJ();
-	MatrixXf computeKB(float m);
-
+	MatrixXf computeKB();
 	MatrixXf computeK();//计算K=KF+KB
+	VectorXf computetsfs();
 };

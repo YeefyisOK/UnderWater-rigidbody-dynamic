@@ -2,7 +2,7 @@
 #include<iostream>
 using namespace Eigen;
 using namespace std;
-CKirchhoff::CKirchhoff(PIC m_pic)
+CKirchhoff::CKirchhoff(PIC m_pic, float m_bodyDensity, float m_fluidDensity)
 {
 	numPoints = m_pic.V.size();
 	numFaces = m_pic.F.size();
@@ -21,7 +21,6 @@ CKirchhoff::CKirchhoff(PIC m_pic)
 			vertex.row(i) = temp.transpose();//赋值顶点矩阵
 		}
 	}
-//	cout << "vertex=" << vertex << endl;
 	if (m_pic.VN.size() > 0) {
 		/*
 		for (int j = 0;j < numPoints; j++) {
@@ -71,7 +70,6 @@ CKirchhoff::CKirchhoff(PIC m_pic)
 			normal.row(i) = temp.transpose();
 		}
 	}
-//	cout << "normal=" << normal << endl;
 	if (m_pic.F.size() > 0) {
 		for (int k = 0; k < 3; k++){//第几行
 			for (int i = 0; i < numFaces; i++){
@@ -93,6 +91,8 @@ CKirchhoff::CKirchhoff(PIC m_pic)
 	m_pic.VN.swap(vector< FaXiangLiang>());
 	//m_pic.VT.swap(vector< WenLi>());
 	m_pic.F.swap(vector<Mian>());
+	fluidDensity = m_fluidDensity;
+	bodyDensity = m_bodyDensity;
 	/*
 	cout << "face[0]=" << face[0] << endl;
 	cout << "face[1]=" << face[1] << endl;
@@ -336,7 +336,6 @@ void CKirchhoff::Subexpressions(float &w0, float &w1, float &w2, float &f1, floa
 	g2 = f2 + w2*(f1 + w2);
 }
 Matrix3f CKirchhoff::comuputeJ() {
-	float mass = 0;
 	Matrix3f inertia;
 	const float mult[10] = { 1.0 / 6, 1.0 / 24, 1.0 / 24, 1.0 / 24, 
 		1.0 / 60, 1.0 / 60, 1.0 / 60, 1.0 / 120, 1.0 / 120, 1.0 / 120 };
@@ -386,30 +385,35 @@ Matrix3f CKirchhoff::comuputeJ() {
 	for (int i = 0;i < 10;i++) {
 		intg[i] *= mult[i];
 	}
-	mass = intg[0];
+	volume = intg[0];
+	cout << "volume" << volume << endl;
+	for (int i = 0;i < 10;i++) {
+		intg[i] *=  bodyDensity;
+	}
+	bodyMass = intg[0];
 	// 质心
-	Vector3f cm(intg[1] / mass, intg[2] / mass, intg[3] / mass);
+	Vector3f cm(intg[1] / bodyMass, intg[2] / bodyMass, intg[3] / bodyMass);
 	// 相对于质心的惯性张量   0x 1y 2z
-	inertia(0, 0) = intg[5] + intg[6] - mass*(cm(1)*cm(1) + cm(2)*cm(2));//yz 12
-	inertia(1, 1) = intg[4] + intg[6] - mass*(cm(2)*cm(2) + cm(0)*cm(0));//zx 20
-	inertia(2, 2) = intg[4] + intg[5] - mass*(cm(0)*cm(0) + cm(1)*cm(1));//xy 01
-	inertia(0, 1) = inertia(1, 0) = -(intg[7] - mass*cm(0)*cm(1));
-	inertia(1, 2) = inertia(2, 1) = -(intg[8] - mass*cm(1)*cm(2));
-	inertia(0, 2) = inertia(2, 0) = -(intg[9] - mass*cm(2)*cm(0));
+	inertia(0, 0) = intg[5] + intg[6] - bodyMass *(cm(1)*cm(1) + cm(2)*cm(2));//yz 12
+	inertia(1, 1) = intg[4] + intg[6] - bodyMass *(cm(2)*cm(2) + cm(0)*cm(0));//zx 20
+	inertia(2, 2) = intg[4] + intg[5] - bodyMass *(cm(0)*cm(0) + cm(1)*cm(1));//xy 01
+	inertia(0, 1) = inertia(1, 0) = -(intg[7] - bodyMass *cm(0)*cm(1));
+	inertia(1, 2) = inertia(2, 1) = -(intg[8] - bodyMass *cm(1)*cm(2));
+	inertia(0, 2) = inertia(2, 0) = -(intg[9] - bodyMass *cm(2)*cm(0));
 	return inertia;
 }
-MatrixXf CKirchhoff::computeKB(float m) {
+MatrixXf CKirchhoff::computeKB() {
 	MatrixXf res(6, 6);
 	res.setZero(6, 6);
-	Matrix3f J = comuputeJ();
+	Matrix3f J = comuputeJ();//计算结束得到mass，注意并行问题
 	res.block(0, 0, 3, 3) = J;
 	Matrix3f identity;
 	identity.setIdentity(3, 3);
-	res.block(3, 3, 3, 3) = m*identity;//标量乘以矩阵
+	res.block(3, 3, 3, 3) = bodyMass *identity;//标量乘以矩阵
 	return res;
 }
 MatrixXf CKirchhoff::computeK(){
-	MatrixXf KB = computeKB(5.0f);//mass
+	MatrixXf KB = computeKB();
 	MatrixXf KF = computeKF(0.01);//offest 不同的模型需要修改 避免源点跑出去
 	//MatrixXf temp = KF.rowwise().sum();
 	/*
@@ -438,4 +442,13 @@ MatrixXf CKirchhoff::computeK(){
 	cout << "KB:" << KB << endl;
 	cout << "Kirchhoff:" << Kirchhoff << endl;
 	return Kirchhoff;
+}
+VectorXf CKirchhoff::computetsfs() {
+	VectorXf tsfs(6);
+	Vector3f g(0, -9.8, 0);
+	Vector3f tg(0, 0, 0);//质量均匀分布
+	Vector3f fg = (bodyMass - volume*fluidDensity)*g;
+	tsfs.block(0, 0, 3, 1) = tg;
+	tsfs.block(3, 0, 3, 1) = fg;
+	return tsfs;
 }

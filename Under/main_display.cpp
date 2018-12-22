@@ -20,7 +20,7 @@ using namespace Eigen;
 int id = 0;
 long imagewidth = 600;
 long imageheight = 800;
-string name = "H:\\MeshData\\tuoyuan3lab.obj";//tuoyuan.obj yuanpan20 bunnyclose  myprop2
+string name = "H:\\MeshData\\yuanpanlab.obj";//tuoyuan.obj yuanpanlab bunnyclose  myproplab
 PIC m_pic;
 void drawScene();
 //窗口的大小
@@ -30,12 +30,11 @@ Vector3f omega(	0, 0, 0);
 Vector3f velocity(0, 0, 0);			
 Matrix3f R = Matrix3f::Identity();//设置为单位阵 在init()改不是单位阵
 Vector3f y(0,0,0);
-Vector3f ts(0,0,0);
-Vector3f fs(0,-50,0);
-MatrixXf K;
-float delta_t=0.1;
+float m_fluidDensity = 0.98;
+float m_bodyDensity = 1.75;
+float delta_t=0.04;
 
-DynamicFormula m_DF(omega,velocity,R,y,ts,fs,K,delta_t);
+DynamicFormula m_DF(omega,velocity,R,y,delta_t);
 bool mouseLeftDown;
 bool mouseRightDown;
 float mouseX, mouseY;
@@ -137,6 +136,10 @@ void GLDraw()
 		}*/
 	}
 }
+void write() {
+	glPushMatrix();
+	glPopMatrix();
+}
 void init() {
 	/*
 	Vector3f temp = R.row(0);
@@ -145,8 +148,10 @@ void init() {
 	m_DF.setR(R);*/
 	ReadPIC();
 	//基尔霍夫张量
-	CKirchhoff m_K(m_pic);
-	K = m_K.computeK();//初始时得到K矩阵
+	CKirchhoff m_K(m_pic,m_bodyDensity,m_fluidDensity);
+	MatrixXf K = m_K.computeK();//初始时得到K矩阵
+	VectorXf m_tsfs = m_K.computetsfs();
+	m_DF.tsfs = m_tsfs;
 
 	m_DF.q = R;
 	m_DF.setK(K);
@@ -201,13 +206,12 @@ void drawScene()           //绘制
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 	gluLookAt(0, 0, 10, 0, 0, 0, 0, 1, 0);//4, 0, -2,
-	glTranslatef(0,  -cameraDistance,0);
+	glTranslatef(0,  -cameraDistance, 0);
 	float *pData = m_DF.GetRotAndTransData();
 	//cout << pData[0] << " " << pData[4] << " " << pData[8] << " " << pData[12] << endl;
 	//cout << pData[1] << " " << pData[5] << " " << pData[9] << " " << pData[13] << endl;
 	//cout << pData[2] << " " << pData[6] << " " << pData[10] << " " << pData[14] << endl;
 	//cout << pData[3] << " " << pData[7] << " " << pData[11] <<" " << pData[15] << endl;
-
 	glTranslatef(m_DF.y(0), m_DF.y(1), m_DF.y(2));
 	glMultMatrixf(pData);
 	//glRotated(m_DF.theta, m_DF.delta_q.x(), m_DF.delta_q.y(), m_DF.delta_q.z());
@@ -234,25 +238,12 @@ void reshape(int width, int height) {
 void TimerFunction(int value)
 {
 	m_DF.nextTime();
-	//设置tsfs 即下一时刻的受力情况
 	/*
 	glutPostRedisplay 标记当前窗口需要重新绘制。通过glutMainLoop下一次循环时，
 	窗口显示将被回调以重新显示窗口的正常面板。多次调用glutPostRedisplay，
 	在下一个显示回调只产生单一的重新显示回调
 	*/
-	id++;
-	char b[4];
-	for (int i = 00;i < 4;i++)
-	{
-		b[i] = (char)id;
-		id = id >> 8;
-	}
 	glutPostRedisplay(); //标志重新绘制
-	string s = "H:\\MeshData\\images\\0001.bmp";
-//	s = s + b[0] + b[1] + b[2] + b[3];
-//	s+=".bmp";
-	const char *imagefilepath = s.data();
-	//ScreenShot(imagefilepath);
 	glutTimerFunc(delta_t*1000, TimerFunction, 1);
 }
 void mouseCB(int button, int state, int x, int y)

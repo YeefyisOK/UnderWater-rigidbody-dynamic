@@ -12,7 +12,7 @@ class DynamicFormula
 {
 public:
 	DynamicFormula(Vector3f omega, Vector3f velocity, Matrix3f R,
-		Vector3f y, Vector3f ts, Vector3f fs,MatrixXf K,float delta_t);
+		Vector3f y, float delta_t);
 	~DynamicFormula();
 	void setK(MatrixXf newK) {
 		K = newK;
@@ -43,8 +43,7 @@ public:
 	Matrix3f R;//R初始化一个正交矩阵
 	Quaternionf q;//R转化四元数
 	Vector3f y;
-	Vector3f ts;
-	Vector3f fs;
+	VectorXf tsfs;
 	VectorXf lp;
 	VectorXf lp_;
 

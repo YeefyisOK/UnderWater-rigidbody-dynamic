@@ -1,14 +1,11 @@
 #include"DynamicFormula.h"
 DynamicFormula::DynamicFormula(Vector3f omega, Vector3f velocity, Matrix3f R,
-	Vector3f y, Vector3f ts, Vector3f fs, MatrixXf K, float delta_t)
+	Vector3f y,float delta_t)
 {
 	this->w = omega;
 	this->v = velocity;
 	this->R = R; //R如何初始化
 	this->y = y;
-	this->ts = ts;
-	this->fs = fs;
-	this->K = K;
 	this->delta_t = delta_t;
 }
 
@@ -38,9 +35,6 @@ VectorXf DynamicFormula::tsfs2tf( Matrix3f Y) {
 	trans.block(0, 3, 3, 3) = negRtY;
 	trans.block(3, 0, 3, 3) = zero;
 	trans.block(3, 3, 3, 3) = Rt;
-	VectorXf tsfs(6);
-	tsfs.block(0, 0, 3, 1) = ts;
-	tsfs.block(3, 0, 3, 1) = fs;
 	/*
 	tsfs(0) = ts(0);
 	tsfs(1) = ts(1);
@@ -244,8 +238,8 @@ Matrix3f DynamicFormula::computeNextR() {
 	q.normalize();
 	return q.toRotationMatrix();*/
 	Vector3f Rw = R *w;// 
-	float length = 1;//sqrt(Rw(0)*Rw(0) + Rw(1)*Rw(1) + Rw(2)*Rw(2))
-	Quaternionf q_w(0, Rw(0)/ length *delta_t, Rw(1)/ length *delta_t, Rw(2)/ length *delta_t);
+	//float length = 1;sqrt(Rw(0)*Rw(0) + Rw(1)*Rw(1) + Rw(2)*Rw(2))
+	Quaternionf q_w(0, Rw(0)* delta_t, Rw(1)*delta_t, Rw(2)* delta_t);
 	q_w = q_w * q;
 	q_w.w() = q_w.w()*0.5;
 	q_w.x() = q_w.x()*0.5;
@@ -289,7 +283,25 @@ Vector3f DynamicFormula::computeNexty( Vector3f y_) {
 	return y + temp_deltay;
 }
 VectorXf DynamicFormula::computeNextlp() {
-	return lp + delta_t * lp_;
+	/*
+	Vector3f l = lp.block(0, 0, 3, 1);
+	Vector3f p = lp.block(3, 0, 3, 1);
+	Vector3f l_ = lp_.block(0, 0, 3, 1);
+	Vector3f p_ = lp_.block(3, 0, 3, 1);
+	Quaternionf q_l(0, l_(0)*delta_t, l_(1) * delta_t, l_(2) * delta_t);
+	q_l = q_l * l;
+	q_l.w() = q_l.w()*0.5;
+	q_l.x() = q_l.x()*0.5;
+	q_l.y() = q_l.y()*0.5;
+	q_l.z() = q_l.z()*0.5;
+	cout << "q_l:" << q_l.coeffs() << endl;//计算经过旋转后的orientation 
+	q.w() = q_l.w() + l.w();
+	q.x() = q_l.x() + l.x();
+	q.y() = q_l.y() + q.y();
+	q.z() = q_l.z() + q.z();
+	q.normalize();
+	return q.toRotationMatrix();*/
+	return lp +  lp_* delta_t ;
 }
 VectorXf DynamicFormula::computeNextwv() {
 	MatrixXf Kinv = K.inverse();
@@ -309,7 +321,7 @@ Vector3f DynamicFormula::vec62Vec32(VectorXf wv) {
 void DynamicFormula::nextTime() {
 	lp_ = computelp_();
 	cout << "oldlp" << lp << endl;
-	cout << "lp_:" << lp_ << endl;
+	cout << "nextlp_:" << lp_<< endl;
 	lp=computeNextlp();//lp
 	cout << "lp:" << lp << endl;
 	VectorXf tempwv= computeNextwv();
@@ -328,6 +340,6 @@ void DynamicFormula::nextTime() {
 	cout << "v:" << v(0) << " " << v(1) << " " << v(2) << endl;
 }
 void DynamicFormula::set_tsfs(Vector3f ts,Vector3f fs) {
-	this->ts = ts;
-	this->fs = fs;
+
+	//this->tsfs
 }
