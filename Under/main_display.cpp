@@ -20,13 +20,13 @@ using namespace Eigen;
 int id = 0;
 long imagewidth = 600;
 long imageheight = 800;
-string name = "H:\\MeshData\\yuanpanlab.obj";//tuoyuan.obj yuanpanlab bunnyclose  myproplab
+string name = "H:\\MeshData\\cubelab.obj";//tuoyuan.obj yuanpanlab bunnyclose  myproplab
 PIC m_pic;
 void drawScene();
 //窗口的大小
 GLfloat windowWidth;
 GLfloat windowHeight;
-Vector3f omega(	0, 0, 0);
+Vector3f omega(	1, 0, 0);
 Vector3f velocity(0, 0, 0);			
 Matrix3f R = Matrix3f::Identity();//设置为单位阵 在init()改不是单位阵
 Vector3f y(0,0,0);
@@ -151,6 +151,7 @@ void init() {
 	CKirchhoff m_K(m_pic,m_bodyDensity,m_fluidDensity);
 	MatrixXf K = m_K.computeK();//初始时得到K矩阵
 	VectorXf m_tsfs = m_K.computetsfs();
+	cout << "tsfs" << m_tsfs << endl;
 	m_DF.tsfs = m_tsfs;
 
 	m_DF.q = R;

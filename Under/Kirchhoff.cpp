@@ -437,8 +437,8 @@ MatrixXf CKirchhoff::computeK(){
 	KF(4, 4) = 4.7054;
 	KF(5, 5) = 1.8585;
 	cout << "KB:" << KB << endl;*/
-	//KB.setIdentity();
-	MatrixXf Kirchhoff = KB+ KF;//
+	KB.setIdentity();
+	MatrixXf Kirchhoff = KB;//+ KF;
 	cout << "KB:" << KB << endl;
 	cout << "Kirchhoff:" << Kirchhoff << endl;
 	return Kirchhoff;

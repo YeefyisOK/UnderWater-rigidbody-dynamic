@@ -20,7 +20,6 @@ public:
 	void setR(Matrix3f newR) {
 		R = newR;
 	}
-	Matrix3f toDaOmegaOrY(Vector3f omega);
 	VectorXf tsfs2tf(Matrix3f Y);
 	//Matrix3f computeR_();
 	Vector3f computey_();
@@ -36,6 +35,13 @@ public:
 	void set_tsfs(Vector3f ts,Vector3f fs);
 	float* GetRotAndTransData();
 	Matrix3f s_GetRotaionMatrix(float angle, const Vector3f &axis);
+	Matrix3f so3_ad(Vector3f omega);
+	Matrix4f se3_cay(VectorXf tempepsilon);
+	Matrix3f so3_cay(Vector3f tempw);
+	MatrixXf se3_ad(VectorXf tempepsilon);
+	VectorXf Unconstr_Dyn(VectorXf epsilon_now, VectorXf epsilon_last, Matrix4f gk);
+	VectorXf se3_DEP(VectorXf epsilon_now, VectorXf epsilon_last, Matrix4f gk);
+	MatrixXf se3_Ctln(VectorXf tempepsilon);
 //private:
 	//初始时刻的 6+1个量
 	Vector3f w;
@@ -46,6 +52,8 @@ public:
 	VectorXf tsfs;
 	VectorXf lp;
 	VectorXf lp_;
+	Matrix4f g;
+	VectorXf epsilon;
 
 	MatrixXf K;
 	float delta_t;

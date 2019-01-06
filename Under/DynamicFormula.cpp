@@ -2,17 +2,27 @@
 DynamicFormula::DynamicFormula(Vector3f omega, Vector3f velocity, Matrix3f R,
 	Vector3f y,float delta_t)
 {
+	VectorXf temp(6);
+	temp.block(0, 0, 3, 1) = omega;
+	temp.block(3, 0, 3, 1) = velocity;
+	epsilon = temp;
 	this->w = omega;
 	this->v = velocity;
 	this->R = R; //R如何初始化
 	this->y = y;
 	this->delta_t = delta_t;
+	g.block(0, 0, 3, 3) = R;
+	g.block(0, 3, 3, 1) = y;
+	g(3, 0) = 0;
+	g(3, 1) = 0;
+	g(3, 2) = 0;
+	g(3, 3) = 1;
 }
 
 DynamicFormula::~DynamicFormula()
 {
 }
-Matrix3f DynamicFormula::toDaOmegaOrY(Vector3f omega) {
+Matrix3f DynamicFormula::so3_ad(Vector3f omega) {
 	Matrix3f res;
 	res(0, 0) = 0;
 	res(0, 1) = -omega(2);
@@ -59,7 +69,7 @@ VectorXf DynamicFormula::computelp() {
 	return K * wv;
 }
 VectorXf DynamicFormula::computelp_() {
-	Matrix3f Y = toDaOmegaOrY(y);
+	Matrix3f Y = so3_ad(y);
 	VectorXf tf = tsfs2tf(Y);
 	Vector3f l = vec62Vec31(lp);
 	Vector3f p = vec62Vec32(lp);
@@ -317,27 +327,184 @@ Vector3f DynamicFormula::vec62Vec31(VectorXf wv) {//也可以用于wv
 Vector3f DynamicFormula::vec62Vec32(VectorXf wv) {
 	return wv.block(3, 0, 3, 1);
 }
+Matrix3f DynamicFormula::so3_cay(Vector3f tempw) {
+	Matrix3f daOmega = so3_ad(tempw);
+	float wlength2 = tempw(0)*tempw(0) + tempw(1)*tempw(1) + tempw(2)*tempw(2);
+	Matrix3f res = Matrix3f::Identity();
+	float xishu = 4 / (4 + wlength2);
+	res = res + xishu * (daOmega + daOmega * daOmega / 2);
+	cout << "so3cay" << res;
+	return res;
+}
+Matrix4f DynamicFormula::se3_cay(VectorXf tempepsilon) {
+	Vector3f tempw = tempepsilon.block(0, 0, 3, 1);//w
+	Vector3f tempv = tempepsilon.block(3, 0, 3, 1);//v
+	Matrix3f so3cay = so3_cay(delta_t*tempw);
+	float wlength2 = tempw(0)*tempw(0) + tempw(1)*tempw(1) + tempw(2)*tempw(2);
+	Matrix3f daOmega = so3_ad(tempw);
+	float xishu = 2 / (4 + wlength2);
+	Matrix3f tempmat = Matrix3f::Identity();
+	tempmat = 2 * tempmat + daOmega;
+	Matrix3f B = xishu * tempmat;
+	Matrix4f res;
+	res.block(0, 0, 3, 3) = so3cay;
+	res.block(0, 3, 3, 1) = delta_t * B*tempv;
+	cout << "delta_t * B*v" << delta_t * B*tempv << endl;
+	res(3, 0) = 0;
+	res(3, 1) = 0;
+	res(3, 2) = 0;
+	res(3, 3) = 1;
+	cout << "se3_cay" << res << endl;
+	return res;
+}
+
+MatrixXf DynamicFormula::se3_ad(VectorXf tempepsilon) {
+	Vector3f w = tempepsilon.block(0, 0, 3, 1);//w
+	Vector3f v = tempepsilon.block(3, 0, 3, 1);//v
+	MatrixXf res(6, 6);
+	res.block(0, 0, 3, 3) = so3_ad(w);
+	res.block(0, 3, 3, 3) = Matrix3f::Zero();
+	res.block(3, 0, 3, 3) = so3_ad(v);
+	res.block(3, 3, 3, 3) = so3_ad(w);
+	return res;
+}
+VectorXf DynamicFormula::se3_DEP(VectorXf epsilon_now, VectorXf epsilon_last, Matrix4f gk) {
+	Vector3f tempy = gk.block(0, 3, 3, 1);			
+	Matrix3f Y = so3_ad(tempy);
+	VectorXf tf = tsfs2tf(Y);
+	MatrixXf ctln1 = se3_Ctln(delta_t * epsilon_now);
+	MatrixXf ctln2 = se3_Ctln(-delta_t * epsilon_last);
+	return ctln1*K*epsilon_now -
+		ctln2*K*epsilon_last - delta_t* tf;
+}
+
+VectorXf DynamicFormula::Unconstr_Dyn(VectorXf epsilon_now, VectorXf epsilon_last, Matrix4f gk) {
+	VectorXf fepsilonk_est=se3_DEP(epsilon_now, epsilon_last, gk);//f epsilonk的估计值
+	MatrixXf Jacobian(6, 6);
+	Vector3f w = epsilon_now.block(0, 0, 3, 1);
+	Vector3f v = epsilon_now.block(3, 0, 3, 1);
+	Jacobian(0, 0) = K(0, 0) + delta_t * 0.5*w(2)*K(1, 0) - delta_t * 0.5*w(1)*K(2, 0);
+	Jacobian(0, 1) = K(0, 1) + delta_t * 0.5*w(2)*K(1, 1) - delta_t * 0.5*w(1)*K(2, 1);
+	Jacobian(0, 2) = K(0, 2) + delta_t * 0.5*w(2)*K(1, 2) - delta_t * 0.5*w(1)*K(2, 2);
+	Jacobian(0, 3) = K(0, 3) + delta_t * 0.5*w(2)*K(1, 3) - delta_t * 0.5*w(1)*K(2, 3);
+	Jacobian(0, 4) = K(0, 4) + delta_t * 0.5*w(2)*K(1, 4) - delta_t * 0.5*w(1)*K(2, 4);
+	Jacobian(0, 5) = K(0, 5) + delta_t * 0.5*w(2)*K(1, 5) - delta_t * 0.5*w(1)*K(2, 5);
+
+	Jacobian(1, 0) = -delta_t * 0.5*w(2)*K(0, 0) + K(1, 0) + delta_t * 0.5*w(0)*K(2, 0);
+	Jacobian(1, 1) = -delta_t * 0.5*w(2)*K(0, 1) + K(1, 1) + delta_t * 0.5*w(0)*K(2, 1);
+	Jacobian(1, 2) = -delta_t * 0.5*w(2)*K(0, 2) + K(1, 2) + delta_t * 0.5*w(0)*K(2, 2);
+	Jacobian(1, 3) = -delta_t * 0.5*w(2)*K(0, 3) + K(1, 3) + delta_t * 0.5*w(0)*K(2, 3);
+	Jacobian(1, 4) = -delta_t * 0.5*w(2)*K(0, 4) + K(1, 4) + delta_t * 0.5*w(0)*K(2, 4);
+	Jacobian(1, 5) = -delta_t * 0.5*w(2)*K(0, 5) + K(1, 5) + delta_t * 0.5*w(0)*K(2, 5);
+
+	Jacobian(2, 0) = delta_t * 0.5*w(1)*K(0, 0) - delta_t * 0.5*w(0)*K(1, 0) + K(2, 0);
+	Jacobian(2, 1) = delta_t * 0.5*w(1)*K(0, 1) - delta_t * 0.5*w(0)*K(1, 1) + K(2, 1);
+	Jacobian(2, 2) = delta_t * 0.5*w(1)*K(0, 2) - delta_t * 0.5*w(0)*K(1, 2) + K(2, 2);
+	Jacobian(2, 3) = delta_t * 0.5*w(1)*K(0, 3) - delta_t * 0.5*w(0)*K(1, 3) + K(2, 3);
+	Jacobian(2, 4) = delta_t * 0.5*w(1)*K(0, 4) - delta_t * 0.5*w(0)*K(1, 4) + K(2, 4);
+	Jacobian(2, 5) = delta_t * 0.5*w(1)*K(0, 5) - delta_t * 0.5*w(0)*K(1, 5) + K(2, 5);
+
+	Jacobian(3, 0) = delta_t * 0.5*v(2)*K(1, 0) - delta_t * 0.5*v(1)*K(2, 0) + K(3, 0) +
+		delta_t * 0.5*w(2)*K(4, 0) - delta_t * 0.5*w(1)*K(5, 0);
+	Jacobian(3, 1) = delta_t * 0.5*v(2)*K(1, 1) - delta_t * 0.5*v(1)*K(2, 1) + K(3, 1) +
+		delta_t * 0.5*w(2)*K(4, 1) - delta_t * 0.5*w(1)*K(5, 1);
+	Jacobian(3, 2) = delta_t * 0.5*v(2)*K(1, 2) - delta_t * 0.5*v(1)*K(2, 2) + K(3, 2) +
+		delta_t * 0.5*w(2)*K(4, 2) - delta_t * 0.5*w(1)*K(5, 2);
+	Jacobian(3, 3) = delta_t * 0.5*v(2)*K(1, 3) - delta_t * 0.5*v(1)*K(2, 3) + K(3, 3) +
+		delta_t * 0.5*w(2)*K(4, 3) - delta_t * 0.5*w(1)*K(5, 3);
+	Jacobian(3, 4) = delta_t * 0.5*v(2)*K(1, 4) - delta_t * 0.5*v(1)*K(2, 4) + K(3, 4) +
+		delta_t * 0.5*w(2)*K(4, 4) - delta_t * 0.5*w(1)*K(5, 4);
+	Jacobian(3, 5) = delta_t * 0.5*v(2)*K(1, 5) - delta_t * 0.5*v(1)*K(2, 5) + K(3, 5) +
+		delta_t * 0.5*w(2)*K(4, 5) - delta_t * 0.5*w(1)*K(5, 5);
+
+	Jacobian(4, 0) = -delta_t * 0.5*v(2)*K(0, 0) + delta_t * 0.5*v(0)*K(2, 0) -
+		delta_t * 0.5*w(2)*K(3, 0) + K(4, 0) + delta_t * 0.5*w(0)*K(5, 0);
+	Jacobian(4, 1) = -delta_t * 0.5*v(2)*K(0, 1) + delta_t * 0.5*v(0)*K(2, 1) -
+		delta_t * 0.5*w(2)*K(3, 1) + K(4, 1) + delta_t * 0.5*w(0)*K(5, 1);
+	Jacobian(4, 2) = -delta_t * 0.5*v(2)*K(0, 2) + delta_t * 0.5*v(0)*K(2, 2) -
+		delta_t * 0.5*w(2)*K(3, 2) + K(4, 2) + delta_t * 0.5*w(0)*K(5, 2);
+	Jacobian(4, 3) = -delta_t * 0.5*v(2)*K(0, 3) + delta_t * 0.5*v(0)*K(2, 3) -
+		delta_t * 0.5*w(2)*K(3, 3) + K(4, 3) + delta_t * 0.5*w(0)*K(5, 3);
+	Jacobian(4, 4) = -delta_t * 0.5*v(2)*K(0, 4) + delta_t * 0.5*v(0)*K(2, 4) -
+		delta_t * 0.5*w(2)*K(3, 4) + K(4, 4) + delta_t * 0.5*w(0)*K(5, 4);
+	Jacobian(4, 5) = -delta_t * 0.5*v(2)*K(0, 5) + delta_t * 0.5*v(0)*K(2, 5) -
+		delta_t * 0.5*w(2)*K(3, 5) + K(4, 5) + delta_t * 0.5*w(0)*K(5, 5);
+
+	Jacobian(5, 0) = delta_t * 0.5*v(1)*K(0, 0) - delta_t * 0.5*v(0)*K(1, 0) +
+		delta_t * 0.5*w(1)*K(3, 0) - delta_t * 0.5*w(0)*K(4, 0) + K(5, 0);
+	Jacobian(5, 1) = delta_t * 0.5*v(1)*K(0, 1) - delta_t * 0.5*v(0)*K(1, 1) +
+		delta_t * 0.5*w(1)*K(3, 1) - delta_t * 0.5*w(0)*K(4, 1) + K(5, 1);
+	Jacobian(5, 2) = delta_t * 0.5*v(1)*K(0, 2) - delta_t * 0.5*v(0)*K(1, 2) +
+		delta_t * 0.5*w(1)*K(3, 2) - delta_t * 0.5*w(0)*K(4, 2) + K(5, 2);
+	Jacobian(5, 3) = delta_t * 0.5*v(1)*K(0, 3) - delta_t * 0.5*v(0)*K(1, 3) +
+		delta_t * 0.5*w(1)*K(3, 3) - delta_t * 0.5*w(0)*K(4, 3) + K(5, 3);
+	Jacobian(5, 4) = delta_t * 0.5*v(1)*K(0, 4) - delta_t * 0.5*v(0)*K(1, 4) +
+		delta_t * 0.5*w(1)*K(3, 4) - delta_t * 0.5*w(0)*K(4, 4) + K(5, 4);
+	Jacobian(5, 5) = delta_t * 0.5*v(1)*K(0, 5) - delta_t * 0.5*v(0)*K(1, 5) +
+		delta_t * 0.5*w(1)*K(3, 5) - delta_t * 0.5*w(0)*K(4, 5) + K(5, 5);
+	VectorXf delta_epsilion=Jacobian.inverse() * fepsilonk_est;
+	cout << "delta_epsilion是是是=" << delta_epsilion << endl;
+	return epsilon_now - delta_epsilion;
+}
+MatrixXf DynamicFormula::se3_Ctln(VectorXf tempepsilon) {
+	MatrixXf identity(6, 6);
+	identity.setIdentity();
+	MatrixXf temp=0.5f*se3_ad(tempepsilon);
+	return identity - temp;
+}
 
 void DynamicFormula::nextTime() {
-	lp_ = computelp_();
-	cout << "oldlp" << lp << endl;
-	cout << "nextlp_:" << lp_<< endl;
-	lp=computeNextlp();//lp
-	cout << "lp:" << lp << endl;
-	VectorXf tempwv= computeNextwv();
-	cout << "tempwv" << tempwv << endl;
-	cout << "w:"<<w(0)<<" " << w(1) << " " << w(2) << endl;
-	cout << "v:"<<v(0) << " " << v(1) << " " << v(2) << endl;
-	Vector3f y_ = computey_();
-	cout << "y_" << y_ << endl;
-	y=computeNexty(y_);//y
+	//lp_ = computelp_();
+	//cout << "oldlp" << lp << endl;
+	//cout << "nextlp_:" << lp_<< endl;
+	//lp=computeNextlp();//lp
+	//cout << "lp:" << lp << endl;
+	//VectorXf tempwv= computeNextwv();
+	//cout << "tempwv" << tempwv << endl;
+	//cout << "w:"<<w(0)<<" " << w(1) << " " << w(2) << endl;
+	//cout << "v:"<<v(0) << " " << v(1) << " " << v(2) << endl;
+	Vector3f tempy = g.block(0, 3, 3, 1);
+	Matrix3f Y = so3_ad(tempy);
+	VectorXf tf = tsfs2tf(Y);
+	VectorXf epsilon_last = epsilon;
+	VectorXf delta_epsilon= delta_t * K.inverse()*(se3_ad(delta_t*epsilon_last)*K*epsilon_last +tf);
+	VectorXf epsilon_now = epsilon_last + delta_epsilon;
+	cout << "epsilon_now 预估" << epsilon_now << endl;
+	VectorXf res = se3_DEP(epsilon_now, epsilon_last, g);
+	cout << "偏差res=" << res << endl;
+	//牛顿迭代法求解方程组
+	int i = 0;
+	float cancha = 0.000001;
+	while ((res(0) > cancha ||res(1)> cancha || res(2) > cancha ||
+		res(3) > cancha || res(4) > cancha || res(5) > cancha ||
+		res(0) < -cancha || res(1) < -cancha || res(2) < -cancha ||
+		res(3) < -cancha || res(4) < -cancha || res(5) < -cancha
+		)&& i<50) {//设置残差值
+	
+		epsilon_now=Unconstr_Dyn(epsilon_now, epsilon_last, g);
+		cout << "epsilon_now 迭代后的值" << epsilon_now << endl;
+		res = se3_DEP(epsilon_now, epsilon_last, g);
+		cout << "偏差res=" << res << endl;
+		i++;
+	}
+	cout << "迭代了多少次？" << i << endl;
+	Matrix4f se3cay= se3_cay(delta_t * epsilon_now);
+	cout << "se3cay==" << se3cay << endl;
+	g= g * se3cay;
+	cout << "g" << g << endl;
+	R = g.block(0, 0, 3, 3);
+	y = g.block(0, 3, 3, 1);
+	epsilon = epsilon_now;
+	//Vector3f y_ = computey_();
+	//cout << "y_" << y_ << endl;
+	//y=computeNexty(y_);//y
 	cout << "y:" << y << endl;
-	R=computeNextR();//R
+	//R=computeNextR();//R
 	cout << "R:" << R << endl;
-	w = tempwv.block(0, 0, 3, 1);//w
-	v = tempwv.block(3, 0, 3, 1);//v
-	cout << "w:" << w(0) << " " << w(1) << " " << w(2) << endl;
-	cout << "v:" << v(0) << " " << v(1) << " " << v(2) << endl;
+	cout << "w:" << epsilon.block(0, 0, 3, 1) << endl;
+	cout << "v:" << epsilon.block(3, 0, 3, 1) << endl;
+	//w = tempwv.block(0, 0, 3, 1);//w
+	//v = tempwv.block(3, 0, 3, 1);//v
 }
 void DynamicFormula::set_tsfs(Vector3f ts,Vector3f fs) {
 
