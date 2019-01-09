@@ -5,7 +5,7 @@
 class CQuaternion
 {
 public:
-	CQuaternion(float _w=0,float _x=1,float _y=0,float _z=0)
+	CQuaternion(double _w=0,double _x=1,double _y=0,double _z=0)
 	{
 		w = _w;
 		x = _x;
@@ -15,7 +15,7 @@ public:
 	CMatrix ToMatrix()
 	{
 		CMatrix mat;
-		float xx2 = 2 * x*x, yy2 = 2 * y*y, zz2 = 2 * z*z,
+		double xx2 = 2 * x*x, yy2 = 2 * y*y, zz2 = 2 * z*z,
 			xy2 = 2 * x*y, xz2 = 2 * x*z, yz2 = 2 * y*z,
 			xw2 = 2 * x*w, yw2 = 2 * y*w, zw2 = 2 * z*w;
 		mat[0][0] = 1 - yy2 - zz2;
@@ -32,8 +32,8 @@ public:
 
 	void FromRotationMatrix(const CMatrix& mat)
 	{
-		float s;
-		float const tr = mat[0][0] + mat[1][1] + mat[2][2] + 1.f;
+		double s;
+		double const tr = mat[0][0] + mat[1][1] + mat[2][2] + 1.f;
 
 		// check the diagonal
 		if (tr > 1.f)
@@ -48,7 +48,7 @@ public:
 		else
 		{
 			int maxi = 0;
-			float maxdiag = mat[0][0];
+			double maxdiag = mat[0][0];
 			for (int i = 1; i < 3; ++i)
 			{
 				if (mat[i][i] > maxdiag)
@@ -104,35 +104,35 @@ public:
 			}
 		}
 	}
-	static CQuaternion FromRotation(float _x,float _y,float _z,float angleInDegree)
+	static CQuaternion FromRotation(double _x,double _y,double _z,double angleInDegree)
 	{
 		// 向量的单位化
-		float length = sqrt(_x * _x + _y * _y + _z * _z);
+		double length = sqrt(_x * _x + _y * _y + _z * _z);
 		_x /= length;
 		_y /= length;
 		_z /= length;
-		float alpha = angleInDegree / 180 * 3.1415926;// 已转换弧度制
+		double alpha = angleInDegree / 180 * 3.1415926;// 已转换弧度制
 		return CQuaternion(
 			sin(alpha / 2) * _x,
 			sin(alpha / 2) * _y,
 			sin(alpha / 2) * _z,
 			cos(alpha / 2));
 	}
-	void setomega(float new_w){
+	void setomega(double new_w){
 		w = new_w;
 	}
-	float get_w(){
+	double get_w(){
 		return w;
 	}
-	float get_x(){
+	double get_x(){
 		return x;
 	}
-	float get_y(){
+	double get_y(){
 		return y;
 	}
-	float get_z(){
+	double get_z(){
 		return z;
 	}
 private:
-	float  w, x, y, z;
+	double  w, x, y, z;
 };

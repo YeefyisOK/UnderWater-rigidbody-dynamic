@@ -20,27 +20,27 @@ using namespace Eigen;
 int id = 0;
 long imagewidth = 600;
 long imageheight = 800;
-string name = "H:\\MeshData\\cubelab.obj";//tuoyuan.obj yuanpanlab bunnyclose  myproplab
+string name = "H:\\MeshData\\myproplab.obj";//ell0 bunnyclose 
 PIC m_pic;
 void drawScene();
 //窗口的大小
-GLfloat windowWidth;
-GLfloat windowHeight;
-Vector3f omega(	1, 0, 0);
-Vector3f velocity(0, 0, 0);			
-Matrix3f R = Matrix3f::Identity();//设置为单位阵 在init()改不是单位阵
-Vector3f y(0,0,0);
-float m_fluidDensity = 0.98;
-float m_bodyDensity = 1.75;
-float delta_t=0.04;
+GLdouble windowWidth;
+GLdouble windowHeight;
+Vector3d omega(0, 0, 0);
+Vector3d velocity(0,0, 0);			
+Matrix3d R = Matrix3d::Identity();//设置为单位阵 在init()改不是单位阵
+Vector3d y(0,0,0);
+double m_fluidDensity = 0.98;
+double m_bodyDensity = 1.75;
+double delta_t=0.04;
 
 DynamicFormula m_DF(omega,velocity,R,y,delta_t);
 bool mouseLeftDown;
 bool mouseRightDown;
-float mouseX, mouseY;
-float cameraDistance=0;
-float cameraAngleX;
-float cameraAngleY;
+double mouseX, mouseY;
+double cameraDistance=0;
+double cameraAngleX;
+double cameraAngleY;
 void ReadPIC()
 {
 	ifstream ifs(name);//cube bunny Eight
@@ -142,15 +142,15 @@ void write() {
 }
 void init() {
 	/*
-	Vector3f temp = R.row(0);
+	Vector3d temp = R.row(0);
 	R.row(0) = R.row(1);
 	R.row(1) = temp;
 	m_DF.setR(R);*/
 	ReadPIC();
 	//基尔霍夫张量
 	CKirchhoff m_K(m_pic,m_bodyDensity,m_fluidDensity);
-	MatrixXf K = m_K.computeK();//初始时得到K矩阵
-	VectorXf m_tsfs = m_K.computetsfs();
+	MatrixXd K = m_K.computeK();//初始时得到K矩阵
+	VectorXd m_tsfs = m_K.computetsfs();
 	cout << "tsfs" << m_tsfs << endl;
 	m_DF.tsfs = m_tsfs;
 
@@ -163,7 +163,7 @@ void init() {
 	glClearDepth(1.0);                    //设置深度缓存的初始值 
 	glDepthFunc(GL_LEQUAL);           //深度测试的方法 
 	glEnable(GL_DEPTH_TEST);          //启用深度测试
-	GLfloat direction[] = { 0, -3.4f, -8.8f, -1.0f }; // 平行光源, GL_POSITION属性的最后一个参数为0
+	GLfloat direction[] = { 0, -1, 0, 0 }; // 平行光源, GL_POSITION属性的最后一个参数为0
 	GLfloat ambient[] = { 0.3f, 0.3f, 0.3f, 1.0f };  // 环境强度
 	GLfloat diffuse[] = { 1.0f, 1.0f, 1.0f, 1.0f };  // 散射强度
 	GLfloat specular[] = { 1.0f, 1.0f, 1.0f, 1.0f }; // 镜面强度
@@ -172,8 +172,12 @@ void init() {
 	glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse);
 	glLightfv(GL_LIGHT0, GL_SPECULAR, specular);
 
+	GLfloat direction1[] = { 0, 0, 1, 0 };
+	glLightfv(GL_LIGHT1, GL_POSITION, direction1);
+
 	glEnable(GL_LIGHTING);   //开关:使用光
 	glEnable(GL_LIGHT0);     //打开0#灯
+	glEnable(GL_LIGHT1);     //打开0#灯
 	glShadeModel(GL_SMOOTH);//中多边形内部各点的光照采用双线性插值的方法得到
 	//设置多边形材质
 	GLfloat mat_ambient[] = { 0.7, 0.7, 0.7, 1.0 };
@@ -208,7 +212,7 @@ void drawScene()           //绘制
 	glLoadIdentity();
 	gluLookAt(0, 0, 10, 0, 0, 0, 0, 1, 0);//4, 0, -2,
 	glTranslatef(0,  -cameraDistance, 0);
-	float *pData = m_DF.GetRotAndTransData();
+	float *pData =m_DF.GetRotAndTransData();
 	//cout << pData[0] << " " << pData[4] << " " << pData[8] << " " << pData[12] << endl;
 	//cout << pData[1] << " " << pData[5] << " " << pData[9] << " " << pData[13] << endl;
 	//cout << pData[2] << " " << pData[6] << " " << pData[10] << " " << pData[14] << endl;
@@ -223,15 +227,15 @@ void reshape(int width, int height) {
 	glViewport(0, 0, width, height);      //设置视窗大小 
 	//设置视景体大小 
 	glMatrixMode(GL_PROJECTION);
-	float ratio = (float)width / height;
+	double ratio = (double)width / height;
 	glLoadIdentity();
 	//gluPerspective(60, ratio, 1, 1000);
 	int viewsize=25;
 	
 	if (width <= height)
-		glOrtho(-viewsize, viewsize, -viewsize * (GLfloat)height / (GLfloat)width, viewsize * (GLfloat)height / (GLfloat)width, -10.0, 10.0);
+		glOrtho(-viewsize, viewsize, -viewsize * (GLdouble)height / (GLdouble)width, viewsize * (GLdouble)height / (GLdouble)width, -10.0, 10.0);
 	else
-		glOrtho(-viewsize *(GLfloat)width / (GLfloat)height, viewsize*(GLfloat)width / (GLfloat)height	, -viewsize, viewsize, -10.0, 10.0);
+		glOrtho(-viewsize *(GLdouble)width / (GLdouble)height, viewsize*(GLdouble)width / (GLdouble)height	, -viewsize, viewsize, -10.0, 10.0);
 
 	//glOrtho(-25, 25, -25, 25, -10, 10);
 }
@@ -275,7 +279,7 @@ void mouseMotionCB(int x, int y)
 int main(int argc, char* argv[]) {
 	glutInit(&argc, argv);    //GLUT 库的初始化 
 	//显示模式初始化：颜色格式——GLUT_RGBA 
-	//           单缓冲或双缓冲——GLUT_SINGLE 或者 GLUT_float //          是否使用深度缓存——GLUT_DEPTH  
+	//           单缓冲或双缓冲——GLUT_SINGLE 或者 GLUT_double //          是否使用深度缓存——GLUT_DEPTH  
 	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE| GLUT_DEPTH);
 	glutInitWindowPosition(100, 100);          //窗口起始位置 
 	glutInitWindowSize(800, 500);             //窗口大小 

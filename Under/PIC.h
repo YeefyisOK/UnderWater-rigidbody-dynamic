@@ -2,18 +2,18 @@
 #include <vector>
 using namespace std;
 struct Vertex{
-	float X;
-	float Y;
-	float Z;
+	double X;
+	double Y;
+	double Z;
 };
 struct WenLi{
-	float TU;
-	float TV;
+	double TU;
+	double TV;
 };
 struct FaXiangLiang{
-	float NX;
-	float NY;
-	float NZ;
+	double NX;
+	double NY;
+	double NZ;
 };
 struct Mian{
 	int V[3];

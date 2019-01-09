@@ -11,54 +11,54 @@ using namespace Eigen;
 class DynamicFormula
 {
 public:
-	DynamicFormula(Vector3f omega, Vector3f velocity, Matrix3f R,
-		Vector3f y, float delta_t);
+	DynamicFormula(Vector3d omega, Vector3d velocity, Matrix3d R,
+		Vector3d y, double delta_t);
 	~DynamicFormula();
-	void setK(MatrixXf newK) {
+	void setK(MatrixXd newK) {
 		K = newK;
 	}
-	void setR(Matrix3f newR) {
+	void setR(Matrix3d newR) {
 		R = newR;
 	}
-	VectorXf tsfs2tf(Matrix3f Y);
-	//Matrix3f computeR_();
-	Vector3f computey_();
-	VectorXf computelp();
-	VectorXf computelp_();
-	Matrix3f computeNextR();
-	Vector3f computeNexty(Vector3f y_);
-	VectorXf computeNextlp();
-	VectorXf computeNextwv();
-	Vector3f vec62Vec31(VectorXf ab);
-	Vector3f vec62Vec32(VectorXf ab);
+	VectorXd tsfs2tf(Matrix3d Y);
+	//Matrix3d computeR_();
+	Vector3d computey_();
+	VectorXd computelp();
+	VectorXd computelp_();
+	Matrix3d computeNextR();
+	Vector3d computeNexty(Vector3d y_);
+	VectorXd computeNextlp();
+	VectorXd computeNextwv();
+	Vector3d vec62Vec31(VectorXd ab);
+	Vector3d vec62Vec32(VectorXd ab);
 	void nextTime();
-	void set_tsfs(Vector3f ts,Vector3f fs);
+	void set_tsfs(Vector3d ts,Vector3d fs);
 	float* GetRotAndTransData();
-	Matrix3f s_GetRotaionMatrix(float angle, const Vector3f &axis);
-	Matrix3f so3_ad(Vector3f omega);
-	Matrix4f se3_cay(VectorXf tempepsilon);
-	Matrix3f so3_cay(Vector3f tempw);
-	MatrixXf se3_ad(VectorXf tempepsilon);
-	VectorXf Unconstr_Dyn(VectorXf epsilon_now, VectorXf epsilon_last, Matrix4f gk);
-	VectorXf se3_DEP(VectorXf epsilon_now, VectorXf epsilon_last, Matrix4f gk);
-	MatrixXf se3_Ctln(VectorXf tempepsilon);
+	Matrix3d s_GetRotaionMatrix(double angle, const Vector3d &axis);
+	Matrix3d so3_ad(Vector3d omega);
+	Matrix4d se3_cay(VectorXd tempepsilon);
+	Matrix3d so3_cay(Vector3d tempw);
+	MatrixXd se3_ad(VectorXd tempepsilon);
+	VectorXd Unconstr_Dyn(VectorXd epsilon_now, VectorXd epsilon_last, Matrix4d &gk);
+	VectorXd se3_DEP(VectorXd epsilon_now, VectorXd epsilon_last, Matrix4d &gk);
+	MatrixXd se3_Ctln(VectorXd tempepsilon);
 //private:
 	//初始时刻的 6+1个量
-	Vector3f w;
-	Vector3f v;
-	Matrix3f R;//R初始化一个正交矩阵
-	Quaternionf q;//R转化四元数
-	Vector3f y;
-	VectorXf tsfs;
-	VectorXf lp;
-	VectorXf lp_;
-	Matrix4f g;
-	VectorXf epsilon;
+	Vector3d w;
+	Vector3d v;
+	Matrix3d R;//R初始化一个正交矩阵
+	Quaterniond q;//R转化四元数
+	Vector3d y;
+	VectorXd tsfs;
+	VectorXd lp;
+	VectorXd lp_;
+	Matrix4d g;
+	VectorXd epsilon;
 
-	MatrixXf K;
-	float delta_t;
+	MatrixXd K;
+	double delta_t;
 	//平移旋转需要的两个参数
 	Quaternionf delta_q;
-	float theta;
+	double theta;
 
 };

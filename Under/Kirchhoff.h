@@ -16,31 +16,31 @@ class CKirchhoff
 public:
 	int numPoints;
 	int numFaces;
-	MatrixXf vertex ;//= MatrixXf::Random(3, 3)
-	MatrixXf normal ;//= MatrixXf::Random(3, 3)
-	MatrixXf face[3] ;
-	float bodyMass;//computeJ得到了mass
-	float bodyDensity;
-	float fluidDensity;
-	float volume;
+	MatrixXd vertex ;//= MatrixXd::Random(3, 3)
+	MatrixXd normal ;//= MatrixXd::Random(3, 3)
+	MatrixXd face[3] ;
+	double bodyMass;//computeJ得到了mass
+	double bodyDensity;
+	double fluidDensity;
+	double volume;
 
-	CKirchhoff(PIC m_pic,float m_bodyDensity,float m_fluidDensity);
-	MatrixXf angular_vector();
-	float area();
-	MatrixXf triangle_area();
-	MatrixXf area_vector();
-	MatrixXf face_center();
-	MatrixXf face_normal();
-	MatrixXf single_layer(MatrixXf a,MatrixXf b);
-	MatrixXf motion_flux();
-	MatrixXf one_point_quadrature();
-	MatrixXf solid_angle(MatrixXf src);
-	MatrixXf computeKF(float offset);
+	CKirchhoff(PIC m_pic,double m_bodyDensity,double m_fluidDensity);
+	MatrixXd angular_vector();
+	double area();
+	MatrixXd triangle_area();
+	MatrixXd area_vector();
+	MatrixXd face_center();
+	MatrixXd face_normal();
+	MatrixXd single_layer(MatrixXd a,MatrixXd b);
+	MatrixXd motion_flux();
+	MatrixXd one_point_quadrature();
+	MatrixXd solid_angle(MatrixXd src);
+	MatrixXd computeKF(double offset);
 	//计算KB
-	void Subexpressions(float &w0, float &w1, float &w2,
-		float &f1, float &f2, float &f3, float &g0, float &g1, float &g2);
-	Matrix3f comuputeJ();
-	MatrixXf computeKB();
-	MatrixXf computeK();//计算K=KF+KB
-	VectorXf computetsfs();
+	void Subexpressions(double &w0, double &w1, double &w2,
+		double &f1, double &f2, double &f3, double &g0, double &g1, double &g2);
+	Matrix3d comuputeJ();
+	MatrixXd computeKB();
+	MatrixXd computeK();//计算K=KF+KB
+	VectorXd computetsfs();
 };

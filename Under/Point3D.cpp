@@ -1,7 +1,7 @@
 #include "Point3D.h"
 #include <math.h>
 
-CPoint3D::CPoint3D(float x, float y, float z)
+CPoint3D::CPoint3D(double x, double y, double z)
 {
 	m_data[0] = x;
 	m_data[1] = y;
@@ -16,9 +16,9 @@ CPoint3D::~CPoint3D(void)
 
 CPoint3D CPoint3D::operator *(const CPoint3D &vec) const
 {
-	float x = m_data[1] * vec.m_data[2] - vec.m_data[1] * m_data[2];
-	float y = vec.m_data[0] * m_data[2] - m_data[0] * vec.m_data[2];
-	float z = m_data[0] * vec.m_data[1] - vec.m_data[0] * m_data[1];
+	double x = m_data[1] * vec.m_data[2] - vec.m_data[1] * m_data[2];
+	double y = vec.m_data[0] * m_data[2] - m_data[0] * vec.m_data[2];
+	double z = m_data[0] * vec.m_data[1] - vec.m_data[0] * m_data[1];
 
 	return CPoint3D(x, y, z);
 }
@@ -37,9 +37,9 @@ CPoint3D& CPoint3D::operator +=(const CPoint3D &point)
 	return *this;
 }
 
-float CPoint3D::operator %(const CPoint3D &vec) const
+double CPoint3D::operator %(const CPoint3D &vec) const
 {
-	float dot = m_data[0] * vec.m_data[0] + m_data[1] * vec.m_data[1] + m_data[2] * vec.m_data[2];
+	double dot = m_data[0] * vec.m_data[0] + m_data[1] * vec.m_data[1] + m_data[2] * vec.m_data[2];
 	return dot;
 }
 
@@ -50,21 +50,21 @@ CPoint3D& CPoint3D::operator /= (const CPoint3D &vec){//向量除以向量 对应相除
 
 	return *this;
 }
-float CPoint3D::AngleWith(const CPoint3D &vec) const
+double CPoint3D::AngleWith(const CPoint3D &vec) const
 {
 	CPoint3D cross = (*this) * vec;
-	float len = cross.Length();
+	double len = cross.Length();
 
-	float dot = (*this) % vec;
+	double dot = (*this) % vec;
 
-	float angle = atan2(len, dot);
+	double angle = atan2(len, dot);
 
 	return angle;
 }
 
-float CPoint3D::Length() const
+double CPoint3D::Length() const
 {
-	float len = m_data[0] * m_data[0] + m_data[1] * m_data[1] + m_data[2] * m_data[2];
+	double len = m_data[0] * m_data[0] + m_data[1] * m_data[1] + m_data[2] * m_data[2];
 	return sqrt(len);
 
 }
