@@ -2,7 +2,7 @@
 #include <vector>
 using namespace std;
 struct Vertex{
-	double X;
+	double X;	
 	double Y;
 	double Z;
 };

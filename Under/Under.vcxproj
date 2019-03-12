@@ -87,19 +87,27 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Body.cpp" />
     <ClCompile Include="DynamicFormula.cpp" />
+    <ClCompile Include="DynamicFormula2.cpp" />
     <ClCompile Include="Kirchhoff3D.cpp" />
     <ClCompile Include="Kirchhoff.cpp" />
+    <ClCompile Include="main_display2.cpp" />
     <ClCompile Include="Matrix.cpp" />
+    <ClCompile Include="PIC.cpp" />
+    <ClCompile Include="PICnew.cpp" />
     <ClCompile Include="Point3D.cpp" />
     <ClCompile Include="main_display.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Body.h" />
     <ClInclude Include="DynamicFormula.h" />
+    <ClInclude Include="DynamicFormula2.h" />
     <ClInclude Include="Kirchhoff3D.h" />
     <ClInclude Include="Kirchhoff.h" />
     <ClInclude Include="Matrix.h" />
     <ClInclude Include="PIC.h" />
+    <ClInclude Include="PICnew.h" />
     <ClInclude Include="Point3D.h" />
     <ClInclude Include="Quaternion.h" />
     <ClInclude Include="Vector6D.h" />

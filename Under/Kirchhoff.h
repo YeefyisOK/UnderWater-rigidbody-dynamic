@@ -39,7 +39,7 @@ public:
 	//º∆À„KB
 	void Subexpressions(double &w0, double &w1, double &w2,
 		double &f1, double &f2, double &f3, double &g0, double &g1, double &g2);
-	Matrix3d comuputeJ();
+	Matrix3d computeJ();
 	MatrixXd computeKB();
 	MatrixXd computeK();//º∆À„K=KF+KB
 	VectorXd computetsfs();

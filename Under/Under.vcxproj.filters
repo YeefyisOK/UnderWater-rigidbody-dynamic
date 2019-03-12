@@ -45,6 +45,21 @@
     <ClCompile Include="DynamicFormula.cpp">
       <Filter>dynamics</Filter>
     </ClCompile>
+    <ClCompile Include="main_display2.cpp">
+      <Filter>drawing</Filter>
+    </ClCompile>
+    <ClCompile Include="DynamicFormula2.cpp">
+      <Filter>dynamics</Filter>
+    </ClCompile>
+    <ClCompile Include="Body.cpp">
+      <Filter>dynamics</Filter>
+    </ClCompile>
+    <ClCompile Include="PICnew.cpp">
+      <Filter>model</Filter>
+    </ClCompile>
+    <ClCompile Include="PIC.cpp">
+      <Filter>model</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="PIC.h">
@@ -70,6 +85,15 @@
     </ClInclude>
     <ClInclude Include="DynamicFormula.h">
       <Filter>dynamics</Filter>
+    </ClInclude>
+    <ClInclude Include="DynamicFormula2.h">
+      <Filter>dynamics</Filter>
+    </ClInclude>
+    <ClInclude Include="Body.h">
+      <Filter>dynamics</Filter>
+    </ClInclude>
+    <ClInclude Include="PICnew.h">
+      <Filter>model</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

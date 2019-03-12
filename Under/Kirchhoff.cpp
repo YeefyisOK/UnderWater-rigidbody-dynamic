@@ -121,7 +121,7 @@ MatrixXd CKirchhoff::computeKF(double offset){
 	//cout << "phi=" << phi << endl;
 	MatrixXd Q = one_point_quadrature();
 	//cout << "Q=" << Q << endl;	
-	KF = Q* phi;
+	KF = fluidDensity * Q* phi;
 	return KF;
 }
 	
@@ -201,8 +201,7 @@ MatrixXd CKirchhoff::one_point_quadrature(){
 	Q.row(5) = (areas.array()*NF.col(2).array()).matrix().transpose();
 	return Q;
 }
-MatrixXd CKirchhoff::angular_vector(){
-	
+MatrixXd CKirchhoff::angular_vector(){	
 	MatrixXd p1 = face[0];
 	MatrixXd p2 = face[1];
 	MatrixXd p3 = face[2];
@@ -325,7 +324,7 @@ void CKirchhoff::Subexpressions(double &w0, double &w1, double &w2, double &f1, 
 	g1 = f2 + w1*(f1 + w1);
 	g2 = f2 + w2*(f1 + w2);
 }
-Matrix3d CKirchhoff::comuputeJ() {
+Matrix3d CKirchhoff::computeJ() {//之前单词打错了
 	Matrix3d inertia;
 	const double mult[10] = { 1.0 / 6, 1.0 / 24, 1.0 / 24, 1.0 / 24, 
 		1.0 / 60, 1.0 / 60, 1.0 / 60, 1.0 / 120, 1.0 / 120, 1.0 / 120 };
@@ -394,7 +393,7 @@ Matrix3d CKirchhoff::comuputeJ() {
 MatrixXd CKirchhoff::computeKB() {
 	MatrixXd res(6, 6);
 	res.setZero(6, 6);
-	Matrix3d J = comuputeJ();//计算结束得到mass，注意并行问题
+	Matrix3d J = computeJ();//计算结束得到mass，注意并行问题
 	res.block(0, 0, 3, 3) = J;
 	Matrix3d identity;
 	identity.setIdentity(3, 3);
@@ -431,8 +430,8 @@ MatrixXd CKirchhoff::computeK(){
 	//KB.setIdentity();
 	MatrixXd Kirchhoff = KB + KF;//
 	cout << "KB:" << KB << endl;
-	cout << "Kirchhoff:" << Kirchhoff << endl;
-	return Kirchhoff;
+	cout << "Kirchhoff:" << 0.5*Kirchhoff << endl;
+	return 0.5*Kirchhoff;
 }
 VectorXd CKirchhoff::computetsfs() {
 	VectorXd tsfs(6);

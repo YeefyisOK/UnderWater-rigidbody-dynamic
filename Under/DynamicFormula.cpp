@@ -443,7 +443,7 @@ VectorXd DynamicFormula::Unconstr_Dyn(VectorXd epsilon_now, VectorXd epsilon_las
 	Jacobian(5, 5) = delta_t * 0.5*v(1)*K(0, 5) - delta_t * 0.5*v(0)*K(1, 5) +
 		delta_t * 0.5*w(1)*K(3, 5) - delta_t * 0.5*w(0)*K(4, 5) + K(5, 5);
 	VectorXd delta_epsilion=Jacobian.inverse() * fepsilonk_est;
-	//cout << "delta_epsilion是是是=" << delta_epsilion << endl;
+	cout << "delta_epsilion是是是=" << delta_epsilion << endl;
 	return epsilon_now - delta_epsilion;
 }
 MatrixXd DynamicFormula::se3_Ctln(VectorXd tempepsilon) {
@@ -474,9 +474,8 @@ void DynamicFormula::nextTime() {
 	//cout << "偏差res=" << res << endl;
 	//牛顿迭代法求解方程组
 	int i = 0;
-	double cancha =1e-15;
+	double cancha =1e-14;
 	do{//设置残差值
-	
 		epsilon_now=Unconstr_Dyn(epsilon_now, epsilon_last, g);
 		//cout << "epsilon_now 迭代后的值" << epsilon_now << endl;
 		res = se3_DEP(epsilon_now, epsilon_last, g);
@@ -488,6 +487,7 @@ void DynamicFormula::nextTime() {
 		res(3) < -cancha || res(4) < -cancha || res(5) < -cancha
 		) && i < 50);
 	//cout << "迭代了多少次？" << i << endl;
+	//cout << "偏差res=" << res << endl;
 	Matrix4d se3cay= se3_cay(delta_t * epsilon_now);
 	//cout << "se3cay==" << se3cay << endl;
 	g= g * se3cay;
