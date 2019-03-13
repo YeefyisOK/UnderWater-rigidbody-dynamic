@@ -4,7 +4,8 @@ using namespace std;
 
 int Body::idnum = 0;
 Body::Body(PICnew *m_picnew, Matrix3d R, Vector3d y) {
-	
+
+	this->K = computeKB();
 	this->m_picnew = m_picnew;
 	onepointST *aonepoint = new onepointST();
 	int facenum = m_picnew->faceandnormal.size();
@@ -20,18 +21,19 @@ Body::Body(PICnew *m_picnew, Matrix3d R, Vector3d y) {
 
 		double a = sqrt((p0 - p1)(0)*(p0 - p1)(0) + (p0 - p1)(1)*(p0 - p1)(1) + (p0 - p1)(2)*(p0 - p1)(2));
 		double b = sqrt((p0 - p2)(0)*(p0 - p2)(0) + (p0 - p2)(1)*(p0 - p2)(1) + (p0 - p2)(2)*(p0 - p2)(2));
-		double c = sqrt((p2 - p1)(0)*(p2 - p1)(0) + (p2 - p1)(1)*(p0 - p1)(1) + (p2 - p1)(2)*(p2 - p1)(2));
+		double c = sqrt((p2 - p1)(0)*(p2 - p1)(0) + (p2 - p1)(1)*(p2 - p1)(1) + (p2 - p1)(2)*(p2 - p1)(2));
 		double p = (a + b + c) / 2;
 		aonepoint->area = sqrt(p*(p - a)*(p - b)*(p - c) );
 		aonepoint->midpoint = R *( (p0 + p1 + p2) / 3) + y;
 		this->v_onepoint.push_back(*aonepoint);
 
 	}
-	Vector3d Zero;
+	Vector3d Zero;//先设置个初始速度，加了重力之后，记得改回来！！！！！
 	Zero.setZero();
+	Vector3d one(1, 0, 0);
 	VectorXd temp(6);
-	temp.block(0, 0, 3, 1) = Zero;
-	temp.block(3, 0, 3, 1) = Zero;
+	temp.block(0, 0, 3, 1) = one;
+	temp.block(3, 0, 3, 1) = one;
 	this->epsilon = temp;
 	Matrix4d tempg;
 	tempg.block(0, 0, 3, 3) = R;

@@ -23,8 +23,8 @@ using namespace Eigen;
 int id = 0;
 long imagewidth = 600;
 long imageheight = 800;
-int modelNum = 2;//模型数量
-string name[2] = { "H:\\MeshData\\cube.obj", "H:\\MeshData\\cube.obj"};//ell0  myproplab
+int modelNum = 2;//模型数量 sanlengzhui
+string name[2] = { "H:\\MeshData\\sanlengzhui.obj", "H:\\MeshData\\sanlengzhui.obj"};//ell0  myproplab
 //模型数组
 vector<PIC*> v_pic;
 vector<PICnew*>  v_picnew;

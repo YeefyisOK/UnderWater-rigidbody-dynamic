@@ -11,6 +11,7 @@ using namespace std;
 using namespace Eigen;
 struct onepointST
 {
+	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 	int id;
 	Vector3d midpoint;//中点
 	Vector3d normal;//法向
@@ -18,6 +19,7 @@ struct onepointST
 };
 class Body {
 public:
+	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 	static int idnum;//把所有面片编号，用来赋值id
 	Matrix4d g;
 	VectorXd epsilon;
@@ -49,4 +51,5 @@ public:
 	VectorXd se3_DEP(VectorXd epsilon_now, VectorXd epsilon_last, Matrix4d &gk);
 	MatrixXd se3_Ctln(VectorXd tempepsilon);
 	void nextTime();
+	
 };
