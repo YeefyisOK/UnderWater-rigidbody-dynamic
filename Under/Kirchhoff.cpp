@@ -343,7 +343,7 @@ Matrix3d CKirchhoff::computeJ() {//之前单词打错了
 		x1 = p[i1].x;       y1 = p[i1].y;       z1 = p[i1].z;
 		x2 = p[i2].x;       y2 = p[i2].y;       z2 = p[i2].z;
 		*/
-		double x0 = face[0](t,0);
+		double x0 = face[0](t,0);//该面第一个索引点的坐标
 		double y0 = face[0](t,1);
 		double z0 = face[0](t,2);
 

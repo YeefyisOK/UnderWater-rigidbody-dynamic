@@ -8,6 +8,7 @@ VectorXd DynamicFormula2::computetraction(vector<Body*> m_body){
 	coefficient.setZero();
 	VectorXd traction(3 * n);
 	MatrixXd H(3*n, 3*n);
+	H.setZero();
 	VectorXd u(3*n);		
 	for (int p = 0;p < m_body.size();p++) {
 		for (int q = 0;q < m_body[p]->v_onepoint.size();q++) {
@@ -26,14 +27,13 @@ VectorXd DynamicFormula2::computetraction(vector<Body*> m_body){
 						Matrix3d KS=	computeKij(x, nx, y, ny)*m_body[p]->v_onepoint[q].area;
 						coefficient.block(3*a, 3*b, 3, 3) = KS;
 						Matrix3d HS = computeHij(x, nx, y, ny)*m_body[p]->v_onepoint[q].area;
-						cout << "HS"<<endl << HS << endl;
+						//cout << "HS"<<endl << HS << endl;
 						H.block(3*a, 3*b, 3, 3) = HS;												
 					}					
 				}
 			}
 		}
 	}
-	cout << "coefficient" << endl<<coefficient << endl;
 	for (int i = 0;i < n;i++) {
 		Matrix3d HSum;
 		HSum.setZero();
@@ -48,15 +48,15 @@ VectorXd DynamicFormula2::computetraction(vector<Body*> m_body){
 		H.block(3 * i, 3 * i, 3, 3) = identity-HSum;//对角线上的奇异元素是这样计算吗
 		coefficient.block(3 * i, 3 * i, 3, 3) = identity-coefficientSum;
 	}
-	cout <<"coefficient"<<endl<< coefficient << endl;
+	//cout <<"coefficient"<<endl<< coefficient << endl;
 	//解线性方程组
 	VectorXd b = H * u;
-	cout << "H:" << endl << H << endl;
-	cout << "u:" << endl << u << endl;
-	cout << "b:" << endl << b << endl;
-	for (int i = 0; i <3*n;i++) {
-		traction.col(i) = coefficient.fullPivHouseholderQr().solve(b.col(i));//sigma=strength NAN!
-	}
+	//cout << "H:" << endl << H << endl;
+	//cout << "u:" << endl << u << endl;
+	//cout << "b:" << endl << b << endl;
+	traction = coefficient.fullPivHouseholderQr().solve(b);//sigma=strength NAN!
+	cout << "traction:" << endl << traction << endl;
+
 	return traction;
 }
 
@@ -110,7 +110,7 @@ Matrix3d DynamicFormula2::computeHij(Vector3d x, Vector3d nx, Vector3d y, Vector
 								 )
 						+ 2 * dirac(i, k)*n(j)
 				)*nx(k);
-				cout << "H i =" << i << "j=" << j << H(i, j) << endl;
+				//cout << "H i =" << i << "j=" << j << H(i, j) << endl;
 			}
 		}
 	}

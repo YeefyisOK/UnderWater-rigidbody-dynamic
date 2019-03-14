@@ -5,7 +5,6 @@ using namespace std;
 int Body::idnum = 0;
 Body::Body(PICnew *m_picnew, Matrix3d R, Vector3d y) {
 
-	this->K = computeKB();
 	this->m_picnew = m_picnew;
 	onepointST *aonepoint = new onepointST();
 	int facenum = m_picnew->faceandnormal.size();
@@ -30,7 +29,7 @@ Body::Body(PICnew *m_picnew, Matrix3d R, Vector3d y) {
 	}
 	Vector3d Zero;//先设置个初始速度，加了重力之后，记得改回来！！！！！
 	Zero.setZero();
-	Vector3d one(1, 0, 0);
+	Vector3d one(0, -1, 0);
 	VectorXd temp(6);
 	temp.block(0, 0, 3, 1) = one;
 	temp.block(3, 0, 3, 1) = one;
@@ -39,6 +38,8 @@ Body::Body(PICnew *m_picnew, Matrix3d R, Vector3d y) {
 	tempg.block(0, 0, 3, 3) = R;
 	tempg.block(0, 3, 3, 1) = y;
 	g = tempg;
+
+	this->K = computeKB();
 }
 
 void Body::Subexpressions(double &w0, double &w1, double &w2, double &f1, double &f2, double &f3, double &g0, double &g1, double &g2) {
@@ -252,7 +253,7 @@ VectorXd Body::Unconstr_Dyn(VectorXd epsilon_now, VectorXd epsilon_last, Matrix4
 	Jacobian(5, 5) = delta_t * 0.5*v(1)*K(0, 5) - delta_t * 0.5*v(0)*K(1, 5) +
 		delta_t * 0.5*w(1)*K(3, 5) - delta_t * 0.5*w(0)*K(4, 5) + K(5, 5);
 	VectorXd delta_epsilion = Jacobian.inverse() * fepsilonk_est;
-	cout << "delta_epsilion是是是=" << delta_epsilion << endl;
+	//cout << "delta_epsilion是是是=" << delta_epsilion << endl;
 	return epsilon_now - delta_epsilion;
 }
 Matrix3d Body::so3_ad(Vector3d omega) {
@@ -287,6 +288,7 @@ void Body::nextTime() {
 	Vector3d tempy = g.block(0, 3, 3, 1);
 	Matrix3d Y = so3_ad(tempy);
 	VectorXd epsilon_last = epsilon;
+	cout << "epsilon:" << epsilon << endl;
 	VectorXd delta_epsilon = delta_t * K.inverse()*(se3_ad(delta_t*epsilon_last)*K*epsilon_last + tf);
 	VectorXd epsilon_now = epsilon_last + delta_epsilon;
 	//cout << "epsilon_now 预估" << epsilon_now << endl;
@@ -358,10 +360,12 @@ void Body::computetf(VectorXd traction) {
 		f += faceif;
 		Vector3d r = v_onepoint[i].midpoint - masscenter;
 		Vector3d faceit = faceif.cross(r);//第i面上计算得到的力矩
+		cout << "力矩在第" << i << "个面是：" << faceit << endl;
 		t += faceit;
 	}
 	VectorXd temptf(6);
 	temptf.block(0, 0, 3, 1) = t;
-	temptf.block(0, 3, 3, 1) = f;
+	temptf.block(3, 0, 3, 1) = f;
 	tf = temptf;//赋值成员变量
+	cout << "tf" << tf << endl;
 }

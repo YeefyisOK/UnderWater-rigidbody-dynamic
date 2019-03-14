@@ -24,7 +24,7 @@ int id = 0;
 long imagewidth = 600;
 long imageheight = 800;
 int modelNum = 2;//模型数量 sanlengzhui
-string name[2] = { "H:\\MeshData\\sanlengzhui.obj", "H:\\MeshData\\sanlengzhui.obj"};//ell0  myproplab
+string name[2] = { "H:\\MeshData\\cube.obj", "H:\\MeshData\\cube.obj"};//ell0  myproplab
 //模型数组
 vector<PIC*> v_pic;
 vector<PICnew*>  v_picnew;
@@ -176,12 +176,12 @@ void init() {
 	}
 	DynamicFormula2 m_DF2 ;
 	VectorXd tractions= m_DF2.computetraction(v_body);//内部是3*1子矩阵
-	cout << "traction" << tractions << endl;
 	int j = 0;
 	for (int i = 0;i < modelNum;i++) {//对模型数量
 		int facenum = v_body[i]->faceNum;
 		//Vector3d 
-		VectorXd abodytraction=tractions.block(3*i,0, facenum,1);//一个物体面片受到的外力
+		VectorXd abodytraction(facenum * 3);
+		abodytraction=tractions.block(3*i,0, facenum*3,1);//一个物体面片受到的外力
 		v_body[i]->computetf(abodytraction);
 	}
 	//基尔霍夫张量
@@ -292,7 +292,7 @@ void TimerFunction(int value)
 		int facenum = v_body[i]->faceNum;
 		//Vector3d 
 		//Vector3d sumf(0, 0, 0);//traction求和
-		VectorXd abodytraction = tractions.block(3 * i, 0, facenum, 1);//一个物体面片受到的外力
+		VectorXd abodytraction = tractions.block(3 * i, 0, facenum*3, 1);//一个物体面片受到的外力
 		v_body[i]->computetf(abodytraction);
 		v_body[i]->nextTime();
 	}

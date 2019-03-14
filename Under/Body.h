@@ -29,8 +29,8 @@ public:
 	int faceNum;
 	double delta_t = 0.04;
 	double bodyMass;//computeJ得到了mass
-	double bodyDensity;//还没用到
-	double fluidDensity;
+	double bodyDensity= 1.75;//还没用到no计算质心用到了
+	double fluidDensity=0.98;
 	double volume;
 	Vector3d masscenter;//世界坐标系的质心
 	//VectorXd traction;
