@@ -30,8 +30,9 @@ Body::Body(PICnew *m_picnew, Matrix3d R, Vector3d y) {
 	Vector3d Zero;//先设置个初始速度，加了重力之后，记得改回来！！！！！
 	Zero.setZero();
 	Vector3d one(0, -1, 0);
+	Vector3d zero(0, 0, 0);
 	VectorXd temp(6);
-	temp.block(0, 0, 3, 1) = one;
+	temp.block(0, 0, 3, 1) = zero;
 	temp.block(3, 0, 3, 1) = one;
 	this->epsilon = temp;
 	Matrix4d tempg;
@@ -180,14 +181,33 @@ MatrixXd Body::se3_ad(VectorXd tempepsilon) {
 	return res;
 }
 VectorXd Body::se3_DEP(VectorXd epsilon_now, VectorXd epsilon_last, Matrix4d &gk) {
+	//Vector3d tempy = gk.block(0, 3, 3, 1);
+	//Matrix3d Y = so3_ad(tempy);
+	//MatrixXd ctln1 = se3_Ctln(delta_t * epsilon_now);
+	//MatrixXd ctln2 = se3_Ctln(-delta_t * epsilon_last);
+	//return ctln1 * K*epsilon_now -
+	//	ctln2 * K*epsilon_last - delta_t * tf;//
 	Vector3d tempy = gk.block(0, 3, 3, 1);
 	Matrix3d Y = so3_ad(tempy);
+	VectorXd tf = tsfs2tf(Y);
 	MatrixXd ctln1 = se3_Ctln(delta_t * epsilon_now);
 	MatrixXd ctln2 = se3_Ctln(-delta_t * epsilon_last);
 	return ctln1 * K*epsilon_now -
 		ctln2 * K*epsilon_last - delta_t * tf;//
 }
-
+VectorXd Body::tsfs2tf(Matrix3d Y) {
+	Matrix3d R = g.block(0, 0, 3, 3);
+	Matrix3d Rt = R.transpose();
+	Matrix3d zero = Matrix3d::Zero();
+	//zero.setZero(3, 3);
+	Matrix3d negRtY = zero - Rt * Y;
+	MatrixXd trans(6, 6);//矩阵分块赋值
+	trans.block(0, 0, 3, 3) = Rt;
+	trans.block(0, 3, 3, 3) = negRtY;
+	trans.block(3, 0, 3, 3) = zero;
+	trans.block(3, 3, 3, 3) = Rt;
+	return trans * tsfs;
+}
 VectorXd Body::Unconstr_Dyn(VectorXd epsilon_now, VectorXd epsilon_last, Matrix4d &gk) {
 	VectorXd fepsilonk_est = se3_DEP(epsilon_now, epsilon_last, gk);//f epsilonk的估计值
 	MatrixXd Jacobian(6, 6);
@@ -287,6 +307,9 @@ void Body::nextTime() {
 	//cout << "v:"<<v(0) << " " << v(1) << " " << v(2) << endl;
 	Vector3d tempy = g.block(0, 3, 3, 1);
 	Matrix3d Y = so3_ad(tempy);
+	VectorXd tf = tsfs2tf(Y);
+	cout << "R" << g.block(0,0,3,3)<<endl<<"y"<<tempy << endl;
+	cout << "tf物体坐标系的力矩和力" << tf << endl;
 	VectorXd epsilon_last = epsilon;
 	cout << "epsilon:" << epsilon << endl;
 	VectorXd delta_epsilon = delta_t * K.inverse()*(se3_ad(delta_t*epsilon_last)*K*epsilon_last + tf);
@@ -316,7 +339,8 @@ void Body::nextTime() {
 	//cout << "g" << g << endl;
 	//R = g.block(0, 0, 3, 3);
 	//y = g.block(0, 3, 3, 1);
-	//m_body.epsilon = epsilon_now;
+	cout << "迭代后的epsilon_now:" << epsilon_now << endl;
+	this->epsilon = epsilon_now;
 	//Vector3d y_ = computey_();
 	//cout << "y_" << y_ << endl;
 	//y=computeNexty(y_);//y
@@ -352,20 +376,20 @@ float* Body::GetRotAndTransData() {//没有trans
 	data[15] = 1;
 	return data;
 }
-void Body::computetf(VectorXd traction) {
-	Vector3d f(0, 0, 0);
-	Vector3d t(0, 0, 0);
+void Body::computetsfs(VectorXd traction) {
+	Vector3d fs(0, 0, 0);
+	Vector3d ts(0, 0, 0);
 	for (int i = 0;i < faceNum;i++) {
-		Vector3d faceif=traction.block(3 * i, 0, 3, 1);//第i个面上的力
-		f += faceif;
+		Vector3d faceifs=traction.block(3 * i, 0, 3, 1);//第i个面上的力
+		fs += faceifs;
 		Vector3d r = v_onepoint[i].midpoint - masscenter;
-		Vector3d faceit = faceif.cross(r);//第i面上计算得到的力矩
-		cout << "力矩在第" << i << "个面是：" << faceit << endl;
-		t += faceit;
+		Vector3d faceits = faceifs.cross(r);//第i面上计算得到的力矩
+		//cout << "力矩在第" << i << "个面是：" << faceits << endl;
+		ts += faceits;
 	}
-	VectorXd temptf(6);
-	temptf.block(0, 0, 3, 1) = t;
-	temptf.block(3, 0, 3, 1) = f;
-	tf = temptf;//赋值成员变量
-	cout << "tf" << tf << endl;
+	VectorXd temptsfs(6);
+	temptsfs.block(0, 0, 3, 1) = ts;
+	temptsfs.block(3, 0, 3, 1) = fs;
+	tsfs = temptsfs;//赋值成员变量
+	cout << "tsfs" << tsfs << endl;
 }

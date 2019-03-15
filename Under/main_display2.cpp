@@ -23,14 +23,14 @@ using namespace Eigen;
 int id = 0;
 long imagewidth = 600;
 long imageheight = 800;
-int modelNum = 2;//模型数量 sanlengzhui
-string name[2] = { "H:\\MeshData\\cube.obj", "H:\\MeshData\\cube.obj"};//ell0  myproplab
+int modelNum = 2;//模型数量 sanlengzhui  2个的话改成2
+string name[2] = { "H:\\MeshData\\sanlengzhui.obj", "H:\\MeshData\\cube.obj"};//ell0  myproplab
 //模型数组
 vector<PIC*> v_pic;
 vector<PICnew*>  v_picnew;
 vector<Body*> v_body;
 Vector3d y_0(0, 0, 0);
-Vector3d y_1(1, 0, 0);
+Vector3d y_1(3, 0, 0);
 Vector3d y[2] = { y_0,y_1 };
 //窗口的大小
 GLdouble windowWidth;
@@ -168,10 +168,9 @@ void init() {
 	ReadPIC();
 	cout << "y0" << y[0] << endl;
 	cout << "y1" << y[1] << endl;
-
 	for (int i = 0;i < modelNum;i++) {
 		PICnew *picnew = v_picnew[i];
-		Body *m_body = new Body(v_picnew[i],R,y[i]);
+		Body *m_body = new Body(v_picnew[i], R, y[i]);
 		v_body.push_back(m_body);
 	}
 	DynamicFormula2 m_DF2 ;
@@ -182,7 +181,7 @@ void init() {
 		//Vector3d 
 		VectorXd abodytraction(facenum * 3);
 		abodytraction=tractions.block(3*i,0, facenum*3,1);//一个物体面片受到的外力
-		v_body[i]->computetf(abodytraction);
+		v_body[i]->computetsfs(abodytraction);
 	}
 	//基尔霍夫张量
 	//CKirchhoff m_K(m_pic, m_bodyDensity, m_fluidDensity);
@@ -194,7 +193,6 @@ void init() {
 	//m_DF.q = R;
 	//m_DF.setK(K);
 	//m_DF.lp = m_DF.computelp();//计算初始的lp
-
 	glClearColor(0.0, 0.0, 0.0, 0.0);  //背景色
 	//深度测试的相关设置 
 	glClearDepth(1.0);                    //设置深度缓存的初始值 
@@ -238,7 +236,7 @@ void drawScene()           //绘制
 {
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
-	gluLookAt(0, 0, 10, 0, 0, 0, 0, 1, 0);//4, 0, -2,
+	gluLookAt(0, 0, 10, 0, 0, 0, 0, 1, 0);//4, 0, -2,在实际场景中，应放在所有模型变换之后，但在OpenGL中，由于顺序恰好相反，应放在所有模型变换之前
 	glTranslatef(0, -cameraDistance, 0);
 	//多物体绘制
 	for (int i = 0;i < modelNum;i++) {
@@ -249,7 +247,8 @@ void drawScene()           //绘制
 		//cout << pData[2] << " " << pData[6] << " " << pData[10] << " " << pData[14] << endl;
 		//cout << pData[3] << " " << pData[7] << " " << pData[11] <<" " << pData[15] << endl;
 		Vector3d tempy = v_body[i]->g.block(0, 3, 3, 1);
-		glTranslatef(tempy(0), tempy(1), tempy(2));
+		cout << "第" << i << "个cube的位置是" << tempy << endl;
+		glTranslatef(tempy(0), tempy(1), tempy(2));//与实际相反
 		glMultMatrixf(pData);
 		//glRotated(m_DF.theta, m_DF.delta_q.x(), m_DF.delta_q.y(), m_DF.delta_q.z());
 		GLDraw(i);
@@ -276,9 +275,9 @@ void reshape(int width, int height) {
 	int viewsize = 25;
 
 	if (width <= height)
-		glOrtho(-viewsize, viewsize, -viewsize * (GLdouble)height / (GLdouble)width, viewsize * (GLdouble)height / (GLdouble)width, -10.0, 10.0);
+		glOrtho(-viewsize, viewsize, -viewsize * (GLdouble)height / (GLdouble)width, viewsize * (GLdouble)height / (GLdouble)width, 0, 20.0);
 	else
-		glOrtho(-viewsize * (GLdouble)width / (GLdouble)height, viewsize*(GLdouble)width / (GLdouble)height, -viewsize, viewsize, -10.0, 10.0);
+		glOrtho(-viewsize * (GLdouble)width / (GLdouble)height, viewsize*(GLdouble)width / (GLdouble)height, -viewsize, viewsize, 0, 20.0);
 
 	//glOrtho(-25, 25, -25, 25, -10, 10);
 }
@@ -293,7 +292,7 @@ void TimerFunction(int value)
 		//Vector3d 
 		//Vector3d sumf(0, 0, 0);//traction求和
 		VectorXd abodytraction = tractions.block(3 * i, 0, facenum*3, 1);//一个物体面片受到的外力
-		v_body[i]->computetf(abodytraction);
+		v_body[i]->computetsfs(abodytraction);
 		v_body[i]->nextTime();
 	}
 	/*

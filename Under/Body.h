@@ -23,13 +23,13 @@ public:
 	static int idnum;//把所有面片编号，用来赋值id
 	Matrix4d g;
 	VectorXd epsilon;
-	VectorXd tf;
+	VectorXd tsfs;
 	//Vector3d f;
 	MatrixXd K;
 	int faceNum;
 	double delta_t = 0.04;
 	double bodyMass;//computeJ得到了mass
-	double bodyDensity= 1.75;//还没用到no计算质心用到了
+	double bodyDensity= 1.75;//还没用到 no 计算质心用到了
 	double fluidDensity=0.98;
 	double volume;
 	Vector3d masscenter;//世界坐标系的质心
@@ -42,7 +42,7 @@ public:
 	MatrixXd computeKB();
 
 	float* GetRotAndTransData();
-	void computetf(VectorXd traction);//通过所有面上的力计算合外力和合外力矩
+	void computetsfs(VectorXd traction);//通过所有面上的力计算合外力和合外力矩
 	Matrix3d so3_ad(Vector3d omega);
 	Matrix4d se3_cay(VectorXd tempepsilon);
 	Matrix3d so3_cay(Vector3d tempw);
@@ -50,6 +50,7 @@ public:
 	VectorXd Unconstr_Dyn(VectorXd epsilon_now, VectorXd epsilon_last, Matrix4d &gk);
 	VectorXd se3_DEP(VectorXd epsilon_now, VectorXd epsilon_last, Matrix4d &gk);
 	MatrixXd se3_Ctln(VectorXd tempepsilon);
+	VectorXd tsfs2tf(Matrix3d Y);
 	void nextTime();
 	
 };

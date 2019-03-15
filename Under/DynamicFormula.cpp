@@ -467,7 +467,7 @@ void DynamicFormula::nextTime() {
 	Matrix3d Y = so3_ad(tempy);
 	VectorXd tf = tsfs2tf(Y);
 	VectorXd epsilon_last = epsilon;
-	VectorXd delta_epsilon= delta_t * K.inverse()*(se3_ad(delta_t*epsilon_last)*K*epsilon_last +tf);
+	VectorXd delta_epsilon = delta_t * K.inverse()*(se3_ad(delta_t*epsilon_last)*K*epsilon_last + tf);
 	VectorXd epsilon_now = epsilon_last + delta_epsilon;
 	//cout << "epsilon_now Ô¤¹À" << epsilon_now << endl;
 	VectorXd res = se3_DEP(epsilon_now, epsilon_last, g);
