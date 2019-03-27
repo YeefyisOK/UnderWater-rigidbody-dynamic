@@ -368,6 +368,7 @@ MatrixXd DynamicFormula::se3_ad(VectorXd tempepsilon) {
 	res.block(3, 3, 3, 3) = so3_ad(w);
 	return res;
 }
+//Çó²Ð²î
 VectorXd DynamicFormula::se3_DEP(VectorXd epsilon_now, VectorXd epsilon_last, Matrix4d &gk) {
 	Vector3d tempy = gk.block(0, 3, 3, 1);			
 	Matrix3d Y = so3_ad(tempy);

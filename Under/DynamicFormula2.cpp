@@ -14,7 +14,7 @@ VectorXd DynamicFormula2::computetraction(vector<Body*> m_body){
 	for (int p = 0;p < m_body.size();p++) {
 		for (int q = 0;q < m_body[p]->v_onepoint.size();q++) {
 			Matrix3d R = m_body[p]->g.block(0, 0, 3, 3);
-			Vector3d y_ = m_body[p]->g.block(3, 0, 3, 1);//物体在 世界坐标的位置
+			Vector3d y_ = m_body[p]->g.block(0, 3, 3, 1);//物体在 世界坐标的位置
 			Vector3d y = R*m_body[p]->v_onepoint[q].midpoint+y_;// 得到y
 			int b= m_body[p]->v_onepoint[q].id;//下标符号
 			Vector3d ny = R*m_body[p]->v_onepoint[q].normal;//得到y的法向
@@ -23,12 +23,11 @@ VectorXd DynamicFormula2::computetraction(vector<Body*> m_body){
 			Vector3d v = R*m_body[p]->epsilon.block(3, 0, 3, 1);
 			//cout << "速度是！！" << v << endl;
 			//应该是世界坐标的速度
-			u.block(3 * b,0,3,1) = w.cross(m_body[p]->v_onepoint[q].midpoint) + v;
+			u.block(3 * b,0,3,1) = w.cross(y) + v;
 			for (int i = 0;i < m_body.size();i++) {
 				for (int j = 0;j < m_body[i]->v_onepoint.size();j++) {
-
 					Matrix3d R2 = m_body[i]->g.block(0, 0, 3, 3);
-					Vector3d y_2 = m_body[i]->g.block(3, 0, 3, 1);//物体在 世界坐标的位置
+					Vector3d y_2 = m_body[i]->g.block(0, 3, 3, 1);//物体在 世界坐标的位置
 					Vector3d x = R2*m_body[i]->v_onepoint[j].midpoint+y_2;//得到sourcepoint x
 					int a = m_body[i]->v_onepoint[j].id;//下标符号
 					Vector3d nx = R*m_body[i]->v_onepoint[j].normal;//得到x的法向
@@ -48,8 +47,7 @@ VectorXd DynamicFormula2::computetraction(vector<Body*> m_body){
 					//	Matrix3d HS = computeHij(x, nx, y, ny)*m_body[p]->v_onepoint[q].area;
 					//	//cout << "H" << endl << computeHij(x, nx, y, ny) << endl;
 					//	H.block(3 * a, 3 * b, 3, 3) = HS;
-					//}
-				
+					//}				
 				}
 			}
 		}
@@ -68,7 +66,6 @@ VectorXd DynamicFormula2::computetraction(vector<Body*> m_body){
 		H.block(3 * i, 3 * i, 3, 3) = identity-HSum;//对角线上的奇异元素是这样计算吗
 		coefficient.block(3 * i, 3 * i, 3, 3) = identity-coefficientSum;
 	}
-
 	//cout <<"coefficient"<<endl<< coefficient << endl;
 	//解线性方程组
 	VectorXd b = H * u;
@@ -77,7 +74,6 @@ VectorXd DynamicFormula2::computetraction(vector<Body*> m_body){
 	//cout << "b:" << endl << b << endl;
 	traction = coefficient.fullPivHouseholderQr().solve(b);//sigma=strength NAN!
 	//cout << "traction:" << endl << traction << endl;
-
 	return traction;
 }
 

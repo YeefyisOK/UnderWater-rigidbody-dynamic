@@ -169,7 +169,7 @@ void init() {
 	cout << "y1" << y[1] << endl;
 	//for (int i = 0;i < modelNum;i++) {
 		//PICnew *picnew = v_picnew[i];
-		Vector3d ve(0, -2, 0);
+		Vector3d ve(0, 2, 0);
 		Body *m_body = new Body(v_picnew[0], R, y[0],delta_t,ve);
 		v_body.push_back(m_body);
 
@@ -279,11 +279,11 @@ void TimerFunction(int value)
 	DynamicFormula2 m_DF2;
 	VectorXd tractions = m_DF2.computetraction(v_body);//内部是3*1子矩阵
 	int j = 0;
+	int t = 0;//tractions分给物体的力 从第几行开始
 	for (int i = 0;i < modelNum;i++) {//对模型数量
 		int facenum = v_body[i]->faceNum;
-		//Vector3d 
-		//Vector3d sumf(0, 0, 0);//traction求和
-		VectorXd abodytraction = tractions.block(3 * i, 0, facenum*3, 1);//一个物体面片受到的外力
+		VectorXd abodytraction = tractions.block(t, 0, facenum*3, 1);//一个物体所有面片受到的外力
+		t += facenum * 3;
 		v_body[i]->computetsfs(abodytraction);
 		v_body[i]->nextTime();
 	}

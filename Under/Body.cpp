@@ -37,8 +37,7 @@ Body::Body(PICnew *m_picnew, Matrix3d R, Vector3d y,double delta_t,Vector3d ve) 
 	Matrix4d tempg;
 	tempg.block(0, 0, 3, 3) = R;
 	tempg.block(0, 3, 3, 1) = y;
-	g = tempg;
-
+	this->g = tempg;
 	this->K = computeKB();
 }
 void Body::convertFromBodyToSpace() {
@@ -137,7 +136,7 @@ Matrix3d Body::computeJ() {
 	inertia(0, 2) = inertia(2, 0) = -(intg[9] - bodyMass * cm(2)*cm(0));
 	Matrix3d R = g.block(0, 0, 3, 3);
 	Vector3d y = g.block(0, 3, 3, 1);
-	this->masscenter = R * cm + y;
+	this->masscenter =  cm;
 
 	return inertia;
 }
@@ -298,15 +297,6 @@ MatrixXd Body::se3_Ctln(VectorXd tempepsilon) {
 	return identity - temp;
 }
 void Body::nextTime() {
-	//lp_ = computelp_();
-	//cout << "oldlp" << lp << endl;
-	//cout << "nextlp_:" << lp_<< endl;
-	//lp=computeNextlp();//lp
-	//cout << "lp:" << lp << endl;
-	//VectorXd tempwv= computeNextwv();
-	//cout << "tempwv" << tempwv << endl;
-	//cout << "w:"<<w(0)<<" " << w(1) << " " << w(2) << endl;
-	//cout << "v:"<<v(0) << " " << v(1) << " " << v(2) << endl;
 	Vector3d tempy = g.block(0, 3, 3, 1);
 	Matrix3d Y = so3_ad(tempy);
 	VectorXd tf = tsfs2tf(Y);
@@ -316,10 +306,7 @@ void Body::nextTime() {
 	cout << "epsilon:" << epsilon << endl;
 	VectorXd delta_epsilon = delta_t * K.inverse()*(se3_ad(delta_t*epsilon_last)*K*epsilon_last + tf);
 	VectorXd epsilon_now = epsilon_last + delta_epsilon;
-	//cout << "epsilon_now 预估" << epsilon_now << endl;
 	VectorXd res = se3_DEP(epsilon_now, epsilon_last, g);
-	//cout << "偏差res=" << res << endl;
-	//牛顿迭代法求解方程组
 	int i = 0;
 	double cancha = 1e-14;
 	do {//设置残差值
@@ -333,26 +320,9 @@ void Body::nextTime() {
 		res(0) < -cancha || res(1) < -cancha || res(2) < -cancha ||
 		res(3) < -cancha || res(4) < -cancha || res(5) < -cancha
 		) && i < 50);
-	//cout << "迭代了多少次？" << i << endl;
-	//cout << "偏差res=" << res << endl;
 	Matrix4d se3cay = se3_cay(delta_t * epsilon_now);
-	//cout << "se3cay==" << se3cay << endl;
 	this->g = g * se3cay;
-	//cout << "g" << g << endl;
-	//R = g.block(0, 0, 3, 3);
-	//y = g.block(0, 3, 3, 1);
-	//cout << "迭代后的epsilon_now:" << epsilon_now << endl;
 	this->epsilon = epsilon_now;
-	//Vector3d y_ = computey_();
-	//cout << "y_" << y_ << endl;
-	//y=computeNexty(y_);//y
-	//cout << "y!!!!!!!!!!!!!!:" << y << endl;
-	//R=computeNextR();//R
-	//cout << "R:" << R << endl;
-	//cout << "w:" << epsilon.block(0, 0, 3, 1) << endl;
-	//cout << "v:" << epsilon.block(3, 0, 3, 1) << endl;
-	//w = tempwv.block(0, 0, 3, 1);//w
-	//v = tempwv.block(3, 0, 3, 1);//v
 }
 float* Body::GetRotAndTransData() {//没有trans
 	Matrix3d R = g.block(0, 0, 3, 3);
@@ -381,10 +351,12 @@ float* Body::GetRotAndTransData() {//没有trans
 void Body::computetsfs(VectorXd traction) {
 	Vector3d fs(0, 0, 0);
 	Vector3d ts(0, 0, 0);
+	Matrix3d R = g.block(0, 0, 3, 3);
+	Vector3d y = g.block(0, 3, 3, 1);
 	for (int i = 0;i < faceNum;i++) {
 		Vector3d faceifs=traction.block(3 * i, 0, 3, 1) * this->v_onepoint[i].area;//第i个面上的力
 		fs += faceifs;
-		Vector3d r = v_onepoint[i].midpoint - masscenter;
+		Vector3d r = R*(v_onepoint[i].midpoint - masscenter);
 		Vector3d faceits = r.cross(faceifs);//第i面上计算得到的力矩
 		//cout << "力矩在第" << i << "个面是：" << faceits << endl;
 		ts += faceits;

@@ -32,7 +32,7 @@ public:
 	double bodyDensity= 1.75;//还没用到 no 计算质心用到了
 	double fluidDensity= 0.98;
 	double volume;
-	Vector3d masscenter;//世界坐标系的质心
+	Vector3d masscenter;//物体坐标系的质心，因为物体一直在运动
 	//VectorXd traction;
 	PICnew *m_picnew;
 	vector <onepointST> v_onepoint;//都是物体坐标
