@@ -22,21 +22,21 @@ public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 	static int idnum;//把所有面片编号，用来赋值id
 	Matrix4d g;
-	VectorXd epsilon;
+	VectorXd epsilon;//物体坐标系下
 	VectorXd tsfs;
 	//Vector3d f;
 	MatrixXd K;
 	int faceNum;
-	double delta_t = 0.04;
+	double delta_t ;
 	double bodyMass;//computeJ得到了mass
 	double bodyDensity= 1.75;//还没用到 no 计算质心用到了
-	double fluidDensity=0.98;
+	double fluidDensity= 0.98;
 	double volume;
 	Vector3d masscenter;//世界坐标系的质心
 	//VectorXd traction;
 	PICnew *m_picnew;
-	vector <onepointST> v_onepoint;//物体坐标变换到世界坐标
-	Body(PICnew *m_picnew,Matrix3d R,Vector3d y);
+	vector <onepointST> v_onepoint;//都是物体坐标
+	Body(PICnew *m_picnew,Matrix3d R,Vector3d y, double delta_t, Vector3d ve);
 	void Subexpressions(double &w0, double &w1, double &w2, double &f1, double &f2, double &f3, double &g0, double &g1, double &g2);
 	Matrix3d computeJ();
 	MatrixXd computeKB();
@@ -52,5 +52,6 @@ public:
 	MatrixXd se3_Ctln(VectorXd tempepsilon);
 	VectorXd tsfs2tf(Matrix3d Y);
 	void nextTime();
+	void convertFromBodyToSpace();
 	
 };

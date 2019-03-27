@@ -3,16 +3,16 @@
 using namespace std;
 
 int Body::idnum = 0;
-Body::Body(PICnew *m_picnew, Matrix3d R, Vector3d y) {
-
+Body::Body(PICnew *m_picnew, Matrix3d R, Vector3d y,double delta_t,Vector3d ve) {
+	this->delta_t = delta_t;
 	this->m_picnew = m_picnew;
-	onepointST *aonepoint = new onepointST();
 	int facenum = m_picnew->faceandnormal.size();
 	this->faceNum = facenum;
 	for (int i = 0;i < facenum;i++) {
+		onepointST *aonepoint = new onepointST();
 		aonepoint->id=idnum ;//静态变量，只与类有关
 		idnum++;
-		aonepoint->normal =R* m_picnew->faceandnormal[i].faceNormal+y;
+		aonepoint->normal = m_picnew->faceandnormal[i].faceNormal;
 		//这个面上三点坐标
 		Vector3d p0 = m_picnew->vertexandnormal[m_picnew->faceandnormal[i].vertexIndex[0]].coordinate;
 		Vector3d p1 = m_picnew->vertexandnormal[m_picnew->faceandnormal[i].vertexIndex[1]].coordinate;
@@ -23,9 +23,8 @@ Body::Body(PICnew *m_picnew, Matrix3d R, Vector3d y) {
 		double c = sqrt((p2 - p1)(0)*(p2 - p1)(0) + (p2 - p1)(1)*(p2 - p1)(1) + (p2 - p1)(2)*(p2 - p1)(2));
 		double p = (a + b + c) / 2;
 		aonepoint->area = sqrt(p*(p - a)*(p - b)*(p - c) );
-		aonepoint->midpoint = R *( (p0 + p1 + p2) / 3) + y;
+		aonepoint->midpoint =  (p0 + p1 + p2) / 3;
 		this->v_onepoint.push_back(*aonepoint);
-
 	}
 	Vector3d Zero;//先设置个初始速度，加了重力之后，记得改回来！！！！！
 	Zero.setZero();
@@ -33,7 +32,7 @@ Body::Body(PICnew *m_picnew, Matrix3d R, Vector3d y) {
 	Vector3d zero(0, 0, 0);
 	VectorXd temp(6);
 	temp.block(0, 0, 3, 1) = zero;
-	temp.block(3, 0, 3, 1) = one;
+	temp.block(3, 0, 3, 1) = ve;
 	this->epsilon = temp;
 	Matrix4d tempg;
 	tempg.block(0, 0, 3, 3) = R;
@@ -42,7 +41,10 @@ Body::Body(PICnew *m_picnew, Matrix3d R, Vector3d y) {
 
 	this->K = computeKB();
 }
-
+void Body::convertFromBodyToSpace() {
+	
+	
+}
 void Body::Subexpressions(double &w0, double &w1, double &w2, double &f1, double &f2, double &f3, double &g0, double &g1, double &g2) {
 	double temp0 = w0 + w1;
 	f1 = temp0 + w2;
@@ -335,11 +337,11 @@ void Body::nextTime() {
 	//cout << "偏差res=" << res << endl;
 	Matrix4d se3cay = se3_cay(delta_t * epsilon_now);
 	//cout << "se3cay==" << se3cay << endl;
-	g = g * se3cay;
+	this->g = g * se3cay;
 	//cout << "g" << g << endl;
 	//R = g.block(0, 0, 3, 3);
 	//y = g.block(0, 3, 3, 1);
-	cout << "迭代后的epsilon_now:" << epsilon_now << endl;
+	//cout << "迭代后的epsilon_now:" << epsilon_now << endl;
 	this->epsilon = epsilon_now;
 	//Vector3d y_ = computey_();
 	//cout << "y_" << y_ << endl;
@@ -380,16 +382,16 @@ void Body::computetsfs(VectorXd traction) {
 	Vector3d fs(0, 0, 0);
 	Vector3d ts(0, 0, 0);
 	for (int i = 0;i < faceNum;i++) {
-		Vector3d faceifs=traction.block(3 * i, 0, 3, 1);//第i个面上的力
+		Vector3d faceifs=traction.block(3 * i, 0, 3, 1) * this->v_onepoint[i].area;//第i个面上的力
 		fs += faceifs;
 		Vector3d r = v_onepoint[i].midpoint - masscenter;
-		Vector3d faceits = faceifs.cross(r);//第i面上计算得到的力矩
+		Vector3d faceits = r.cross(faceifs);//第i面上计算得到的力矩
 		//cout << "力矩在第" << i << "个面是：" << faceits << endl;
 		ts += faceits;
 	}
 	VectorXd temptsfs(6);
-	temptsfs.block(0, 0, 3, 1) = ts;
-	temptsfs.block(3, 0, 3, 1) = fs;
-	tsfs = temptsfs;//赋值成员变量
-	cout << "tsfs" << tsfs << endl;
+	temptsfs.block(0, 0, 3, 1) = ts;//合外力矩
+	temptsfs.block(3, 0, 3, 1) = fs;//合外力
+	this->tsfs = temptsfs;//赋值成员变量
+	cout << "computetsfs得到的结果" << tsfs << endl;
 }

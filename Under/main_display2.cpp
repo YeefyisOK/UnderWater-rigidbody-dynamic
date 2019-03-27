@@ -23,8 +23,8 @@ using namespace Eigen;
 int id = 0;
 long imagewidth = 600;
 long imageheight = 800;
-int modelNum = 2;//模型数量 sanlengzhui  2个的话改成2
-string name[2] = { "H:\\MeshData\\sanlengzhui.obj", "H:\\MeshData\\cube.obj"};//ell0  myproplab
+int modelNum =1;//模型数量 sanlengzhui  2个的话改成2
+string name[2] = { "H:\\MeshData\\tuoyuan3lab.obj", "H:\\MeshData\\cube.obj"};//ell0  myproplab
 //模型数组
 vector<PIC*> v_pic;
 vector<PICnew*>  v_picnew;
@@ -54,10 +54,10 @@ void ReadPIC()//把所有obj文件读取到v_pic中,v_pic转化v_picnew
 	for (int i = 0;i < modelNum;i++) {
 		ifstream ifs(name[i]);//cube bunny Eight
 		string s;
-		Mian *f;
-		Vertex *v;
-		FaXiangLiang *vn;
-		WenLi  *vt;
+		Mian *f = NULL;
+		Vertex *v = NULL;
+		FaXiangLiang *vn = NULL;
+		WenLi  *vt = NULL;
 		PIC *m_pic = new PIC();
 		while (getline(ifs, s))
 		{
@@ -117,7 +117,6 @@ void ReadPIC()//把所有obj文件读取到v_pic中,v_pic转化v_picnew
 			}
 		}
 		v_pic.push_back(m_pic);
-
 	}
 	for (int i = 0;i < v_pic.size();i++) {
 		PICnew *a_picnew = new PICnew( v_pic[i]);
@@ -168,31 +167,26 @@ void init() {
 	ReadPIC();
 	cout << "y0" << y[0] << endl;
 	cout << "y1" << y[1] << endl;
-	for (int i = 0;i < modelNum;i++) {
-		PICnew *picnew = v_picnew[i];
-		Body *m_body = new Body(v_picnew[i], R, y[i]);
+	//for (int i = 0;i < modelNum;i++) {
+		//PICnew *picnew = v_picnew[i];
+		Vector3d ve(0, -2, 0);
+		Body *m_body = new Body(v_picnew[0], R, y[0],delta_t,ve);
 		v_body.push_back(m_body);
-	}
-	DynamicFormula2 m_DF2 ;
-	VectorXd tractions= m_DF2.computetraction(v_body);//内部是3*1子矩阵
-	int j = 0;
-	for (int i = 0;i < modelNum;i++) {//对模型数量
-		int facenum = v_body[i]->faceNum;
-		//Vector3d 
-		VectorXd abodytraction(facenum * 3);
-		abodytraction=tractions.block(3*i,0, facenum*3,1);//一个物体面片受到的外力
-		v_body[i]->computetsfs(abodytraction);
-	}
-	//基尔霍夫张量
-	//CKirchhoff m_K(m_pic, m_bodyDensity, m_fluidDensity);
-	//MatrixXd K = m_K.computeK();//初始时得到K矩阵
-	//VectorXd m_tsfs = m_K.computetsfs();
-	//cout << "tsfs" << m_tsfs << endl;
-	//m_DF.tsfs = m_tsfs;
 
-	//m_DF.q = R;
-	//m_DF.setK(K);
-	//m_DF.lp = m_DF.computelp();//计算初始的lp
+		//Vector3d ve2(0, -1, 0);
+		//Body *m_body2 = new Body(v_picnew[1], R, y[1], delta_t, ve2);
+		//v_body.push_back(m_body2);
+	//}
+	//DynamicFormula2 m_DF2 ;
+	//VectorXd tractions= m_DF2.computetraction(v_body);//内部是3*1子矩阵
+	//int j = 0;
+	//for (int i = 0;i < modelNum;i++) {//对模型数量
+	//	int facenum = v_body[i]->faceNum;
+	//	//Vector3d 
+	//	VectorXd abodytraction(facenum * 3);
+	//	abodytraction=tractions.block(3*i,0, facenum*3,1);//一个物体面片受到的外力
+	//	v_body[i]->computetsfs(abodytraction);
+	//}
 	glClearColor(0.0, 0.0, 0.0, 0.0);  //背景色
 	//深度测试的相关设置 
 	glClearDepth(1.0);                    //设置深度缓存的初始值 
@@ -229,7 +223,6 @@ void init() {
 	//使能GL_COLOR_MATERIAL，而后利用glColorMaterial()函数指明glColor*()函数将影响到的材质属性
 	glEnable(GL_COLOR_MATERIAL);
 	glColorMaterial(GL_FRONT, GL_DIFFUSE);
-
 }
 
 void drawScene()           //绘制
@@ -278,7 +271,6 @@ void reshape(int width, int height) {
 		glOrtho(-viewsize, viewsize, -viewsize * (GLdouble)height / (GLdouble)width, viewsize * (GLdouble)height / (GLdouble)width, 0, 20.0);
 	else
 		glOrtho(-viewsize * (GLdouble)width / (GLdouble)height, viewsize*(GLdouble)width / (GLdouble)height, -viewsize, viewsize, 0, 20.0);
-
 	//glOrtho(-25, 25, -25, 25, -10, 10);
 }
 

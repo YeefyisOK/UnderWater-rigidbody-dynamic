@@ -26,12 +26,12 @@ PICnew::PICnew(PIC *m_PIC) {
 	};//遍历face，记录每个顶点的法向
 	int n = m_PIC->V.size();
 	//numandnormal vn[n];
-	vector <numandnormalST> vn;//顶点法向   0   1个   n1；1  4个   n1+n2+n3+n4;
+	vector <numandnormalST> vn;//顶点法向   0   1个   n1；1  4个   n1+n
 	numandnormalST *numandnormal = new numandnormalST();
-	for (int i = 0;i < n;i++) {
+	for (int i = 0;i < n;i++) {//顶点数量2+n3+n4;
 		vn.push_back(*numandnormal);
 	}
-	for (int i = 0;i < faceandnormal.size();i++) {
+	for (int i = 0;i < faceandnormal.size();i++) {//遍历所有的面
 		vn[faceandnormal[i].vertexIndex[0]].num++;
 		vn[faceandnormal[i].vertexIndex[0]].normal += faceandnormal[i].faceNormal;
 	}

@@ -45,31 +45,31 @@
 //{
 //	ifstream ifs(name);//cube bunny Eight
 //	string s;
-//	Mian *f;
+//	Mian *f ;
 //	Vertex *v;
-//	FaXiangLiang *vn;
-//	WenLi  *vt;
+//	FaXiangLiang *vn ;
+//	WenLi  *vt ;
 //	while (getline(ifs, s))
 //	{
 //		if (s.length()<2)continue;
 //		if (s[0] == 'v'){
 //			if (s[1] == 't'){//vt 0.581151 0.979929 纹理
 //				istringstream in(s);
-//				vt = new WenLi();
+//				WenLi *vt = new WenLi();
 //				string head;
 //				in >> head >> vt->TU >> vt->TV;
 //				m_pic.VT.push_back(*vt);
 //			}
 //			else	if (s[1] == 'n'){//vn 0.637005 -0.0421857 0.769705 法向量
 //				istringstream in(s);
-//				vn = new FaXiangLiang();
+//				FaXiangLiang *vn = new FaXiangLiang();
 //				string head;
 //				in >> head >> vn->NX >> vn->NY >> vn->NZ;
 //				m_pic.VN.push_back(*vn);
 //			}
 //			else{//v -53.0413 158.84 -135.806 点
 //				istringstream in(s);
-//				v = new Vertex();
+//				Vertex *v = new Vertex();
 //				string head;
 //				in >> head >> v->X >> v->Y >> v->Z;
 //				m_pic.V.push_back(*v);
@@ -80,7 +80,7 @@
 //				if (s[k] == '/')s[k] = ' ';
 //			}
 //			istringstream in(s);
-//			f = new Mian();
+//			Mian *f = new Mian();
 //			string head;
 //			in >> head;
 //			int i = 0;
