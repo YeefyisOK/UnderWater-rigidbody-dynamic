@@ -2,6 +2,7 @@
 #include <cmath>
 double DynamicFormula2::mu=1;
 
+
 //计算每个面上的应力
 VectorXd DynamicFormula2::computetraction(vector<Body*> m_body){
 	int n = m_body[0]->idnum;//获取总面片数
@@ -39,41 +40,83 @@ VectorXd DynamicFormula2::computetraction(vector<Body*> m_body){
 						//cout << "H"<<endl << computeHij(x, nx, y, ny) << endl;
 						H.block(3*a, 3*b, 3, 3) = HS;												
 					}	
-					//else if(x==y){
-					//	y += ny * 0.01;
-					//	Matrix3d KS = computeKij(x, nx, y, ny)*m_body[p]->v_onepoint[q].area;
-					//	//cout << "K" << endl << computeKij(x, nx, y, ny) << endl;
-					//	coefficient.block(3 * a, 3 * b, 3, 3) = KS;
-					//	Matrix3d HS = computeHij(x, nx, y, ny)*m_body[p]->v_onepoint[q].area;
-					//	//cout << "H" << endl << computeHij(x, nx, y, ny) << endl;
-					//	H.block(3 * a, 3 * b, 3, 3) = HS;
-					//}				
+					else if(x==y){
+						//三个顶点
+						Vector3d p0 = m_body[p]->v_onepoint[q].vertex[0];
+						Vector3d p1 = m_body[p]->v_onepoint[q].vertex[1];
+						Vector3d p2 = m_body[p]->v_onepoint[q].vertex[2];
+						//三个顶点的中点
+						Vector3d p01 = (p0+p1) / 2;
+						Vector3d p02 = (p0+p2) / 2;
+						Vector3d p12 = (p1+p2) / 2;
+						//S0
+						Vector3d mid0 = (p0 + p01 + p02) / 3;
+						double S0 = trianglearea(p0,p01,p02);
+						//S1
+						Vector3d mid1 = (p1 + p01 + p12) / 3;
+						double S1 = trianglearea(p1,p01,p12);
+						//S2
+						Vector3d mid2 = (p2 + p02 + p12) / 3;
+						double S2 = trianglearea(p2,p02,p12);
+						//中间三角形继续划分
+						//顶点中点的中点
+						Vector3d p0102 = (p01 + p02) / 2;
+						Vector3d p0112 = (p01 + p12) / 2;
+						Vector3d p0212 = (p02 + p12) / 2;
+						//S01
+						Vector3d mid01 = (p01 + p0102 + p0112) / 3;
+						double S01 = trianglearea(p01,p0102,p0112);
+						//S02
+						Vector3d mid02 = (p02 + p0102 + p0212) / 3;
+						double S02 = trianglearea(p02, p0102, p0212);
+						//S12
+						Vector3d mid12 = (p12 + p0112 + p0212) / 3;
+						double S12 = trianglearea(p12,p0112,p0212);
+
+						Matrix3d KS = computeKij(x, nx, mid0, ny)*S0
+							+ computeKij(x, nx, mid1, ny)*S1
+							+ computeKij(x, nx, mid2, ny)*S2
+							+ computeKij(x, nx, mid01, ny)*S01
+							+ computeKij(x, nx, mid02, ny)*S02
+							+ computeKij(x, nx, mid12, ny)*S12							;
+						//cout << "K" << endl << computeKij(x, nx, y, ny) << endl;
+						coefficient.block(3 * a, 3 * b, 3, 3) = KS;
+						Matrix3d HS = computeHij(x, nx, mid0, ny)*S0
+							+ computeHij(x, nx, mid1, ny)*S1 
+							+ computeHij(x, nx, mid2, ny)*S2
+							+ computeHij(x, nx, mid01, ny)*S01
+							+ computeHij(x, nx, mid02, ny)*S02
+							+ computeHij(x, nx, mid12, ny)*S12;
+
+						//cout << "H" << endl << computeHij(x, nx, y, ny) << endl;
+						H.block(3 * a, 3 * b, 3, 3) = HS;
+					}				
 				}
 			}
 		}
 	}
-	for (int i = 0;i < n;i++) {
-		Matrix3d HSum;
-		HSum.setZero();
-		Matrix3d coefficientSum;
-		coefficientSum.setZero();
-		for (int j = 0;j < n&&i!=j;j++) {
-			HSum += H.block(3 * i, 3 * j, 3, 3);
-			coefficientSum += coefficient.block(3 * i, 3 * j, 3, 3);
-		}
-		Matrix3d identity;
-		identity.setIdentity();
-		H.block(3 * i, 3 * i, 3, 3) = identity-HSum;//对角线上的奇异元素是这样计算吗
-		coefficient.block(3 * i, 3 * i, 3, 3) = identity-coefficientSum;
-	}
-	//cout <<"coefficient"<<endl<< coefficient << endl;
+	//for (int i = 0;i < n;i++) {
+	//	Matrix3d HSum;
+	//	HSum.setZero();
+	//	Matrix3d coefficientSum;
+	//	coefficientSum.setZero();
+	//	for (int j = 0;j < n&&i!=j;j++) {
+	//		HSum += H.block(3 * i, 3 * j, 3, 3);
+	//		coefficientSum += coefficient.block(3 * i, 3 * j, 3, 3);
+	//	}
+	//	Matrix3d identity;
+	//	identity.setIdentity();
+	//	H.block(3 * i, 3 * i, 3, 3) = identity-HSum+0.5*identity;//对角线上的奇异元素是这样计算吗
+	//	coefficient.block(3 * i, 3 * i, 3, 3) =1.5* identity-coefficientSum;
+	//}
+	cout <<"coefficient"<<endl<< coefficient << endl;
 	//解线性方程组
 	VectorXd b = H * u;
 	//cout << "H:" << endl << H << endl;
 	//cout << "u:" << endl << u << endl;
-	//cout << "b:" << endl << b << endl;
+	cout << "b:" << endl << b << endl;
 	traction = coefficient.fullPivHouseholderQr().solve(b);//sigma=strength NAN!
-	//cout << "traction:" << endl << traction << endl;
+	cout << "traction:" << endl << traction << endl;
 	return traction;
 }
 

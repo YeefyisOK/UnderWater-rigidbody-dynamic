@@ -23,8 +23,8 @@ using namespace Eigen;
 int id = 0;
 long imagewidth = 600;
 long imageheight = 800;
-int modelNum =1;//模型数量 sanlengzhui  2个的话改成2
-string name[2] = { "H:\\MeshData\\tuoyuan3lab.obj", "H:\\MeshData\\cube.obj"};//ell0  myproplab
+int modelNum =2;//模型数量 sanlengzhui  2个的话改成2
+string name[2] = { "H:\\MeshData\\sanlengzhui.obj", "H:\\MeshData\\sanlengzhui.obj"};//ell0  myproplab
 //模型数组
 vector<PIC*> v_pic;
 vector<PICnew*>  v_picnew;
@@ -49,6 +49,9 @@ double mouseX, mouseY;
 double cameraDistance = 0;
 double cameraAngleX;
 double cameraAngleY;
+Vector3d ve1(0, 2, 0);
+Vector3d ve2(0, 0, 0);
+Vector3d ve[] = { ve1 ,ve2};
 void ReadPIC()//把所有obj文件读取到v_pic中,v_pic转化v_picnew
 {
 	for (int i = 0;i < modelNum;i++) {
@@ -167,16 +170,13 @@ void init() {
 	ReadPIC();
 	cout << "y0" << y[0] << endl;
 	cout << "y1" << y[1] << endl;
-	//for (int i = 0;i < modelNum;i++) {
-		//PICnew *picnew = v_picnew[i];
-		Vector3d ve(0, 2, 0);
-		Body *m_body = new Body(v_picnew[0], R, y[0],delta_t,ve);
+	for (int i = 0;i < modelNum;i++) {
+		PICnew *picnew = v_picnew[i];
+		Body *m_body = new Body(v_picnew[0], R, y[i],delta_t,ve[i]);
 		v_body.push_back(m_body);
 
-		//Vector3d ve2(0, -1, 0);
-		//Body *m_body2 = new Body(v_picnew[1], R, y[1], delta_t, ve2);
-		//v_body.push_back(m_body2);
-	//}
+	}
+
 	//DynamicFormula2 m_DF2 ;
 	//VectorXd tractions= m_DF2.computetraction(v_body);//内部是3*1子矩阵
 	//int j = 0;

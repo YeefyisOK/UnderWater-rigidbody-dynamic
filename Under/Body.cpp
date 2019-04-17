@@ -18,6 +18,10 @@ Body::Body(PICnew *m_picnew, Matrix3d R, Vector3d y,double delta_t,Vector3d ve) 
 		Vector3d p1 = m_picnew->vertexandnormal[m_picnew->faceandnormal[i].vertexIndex[1]].coordinate;
 		Vector3d p2 = m_picnew->vertexandnormal[m_picnew->faceandnormal[i].vertexIndex[2]].coordinate;
 
+		aonepoint->vertex[0] = p0;
+		aonepoint->vertex[1] = p1;
+		aonepoint->vertex[2] = p2;
+
 		double a = sqrt((p0 - p1)(0)*(p0 - p1)(0) + (p0 - p1)(1)*(p0 - p1)(1) + (p0 - p1)(2)*(p0 - p1)(2));
 		double b = sqrt((p0 - p2)(0)*(p0 - p2)(0) + (p0 - p2)(1)*(p0 - p2)(1) + (p0 - p2)(2)*(p0 - p2)(2));
 		double c = sqrt((p2 - p1)(0)*(p2 - p1)(0) + (p2 - p1)(1)*(p2 - p1)(1) + (p2 - p1)(2)*(p2 - p1)(2));
@@ -303,7 +307,7 @@ void Body::nextTime() {
 	cout << "R" << g.block(0,0,3,3)<<endl<<"y"<<tempy << endl;
 	cout << "tf物体坐标系的力矩和力" << tf << endl;
 	VectorXd epsilon_last = epsilon;
-	cout << "epsilon:" << epsilon << endl;
+	cout << "epsilon伊普西龙伊普西龙伊普西龙伊普西龙!:" << epsilon << endl;
 	VectorXd delta_epsilon = delta_t * K.inverse()*(se3_ad(delta_t*epsilon_last)*K*epsilon_last + tf);
 	VectorXd epsilon_now = epsilon_last + delta_epsilon;
 	VectorXd res = se3_DEP(epsilon_now, epsilon_last, g);
