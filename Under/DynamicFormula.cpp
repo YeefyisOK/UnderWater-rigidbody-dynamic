@@ -444,7 +444,7 @@ VectorXd DynamicFormula::Unconstr_Dyn(VectorXd epsilon_now, VectorXd epsilon_las
 	Jacobian(5, 5) = delta_t * 0.5*v(1)*K(0, 5) - delta_t * 0.5*v(0)*K(1, 5) +
 		delta_t * 0.5*w(1)*K(3, 5) - delta_t * 0.5*w(0)*K(4, 5) + K(5, 5);
 	VectorXd delta_epsilion=Jacobian.inverse() * fepsilonk_est;
-	cout << "delta_epsilion是是是=" << delta_epsilion << endl;
+	//cout << "delta_epsilion是是是=" << delta_epsilion << endl;
 	return epsilon_now - delta_epsilion;
 }
 MatrixXd DynamicFormula::se3_Ctln(VectorXd tempepsilon) {
@@ -496,6 +496,7 @@ void DynamicFormula::nextTime() {
 	R = g.block(0, 0, 3, 3);
 	y = g.block(0, 3, 3, 1);
 	epsilon = epsilon_now;
+	cout << "角速度和速度是" << epsilon << endl;
 	//Vector3d y_ = computey_();
 	//cout << "y_" << y_ << endl;
 	//y=computeNexty(y_);//y

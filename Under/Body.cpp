@@ -3,7 +3,7 @@
 using namespace std;
 
 int Body::idnum = 0;
-Body::Body(PICnew *m_picnew, Matrix3d R, Vector3d y,double delta_t,Vector3d ve) {
+Body::Body(PICnew *m_picnew, Matrix3d R, Vector3d y,double delta_t,Vector3d ve,Vector3d ome) {
 	this->delta_t = delta_t;
 	this->m_picnew = m_picnew;
 	int facenum = m_picnew->faceandnormal.size();
@@ -35,7 +35,7 @@ Body::Body(PICnew *m_picnew, Matrix3d R, Vector3d y,double delta_t,Vector3d ve) 
 	Vector3d one(0, -1, 0);
 	Vector3d zero(0, 0, 0);
 	VectorXd temp(6);
-	temp.block(0, 0, 3, 1) = zero;
+	temp.block(0, 0, 3, 1) = ome;
 	temp.block(3, 0, 3, 1) = ve;
 	this->epsilon = temp;
 	Matrix4d tempg;

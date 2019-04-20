@@ -13,10 +13,12 @@ PICnew::PICnew(PIC *m_PIC) {
 		Vector3d temp1(m_PIC->V[m_fan->vertexIndex[1]].X, m_PIC->V[m_fan->vertexIndex[1]].Y, m_PIC->V[m_fan->vertexIndex[1]].Z);
 		Vector3d temp2(m_PIC->V[m_fan->vertexIndex[2]].X, m_PIC->V[m_fan->vertexIndex[2]].Y, m_PIC->V[m_fan->vertexIndex[2]].Z);
 		Vector3d normal = (temp1 - temp0).cross(temp2 - temp0);
-		double length = sqrt(
-			normal(0)*normal(0) + normal(1)*normal(1) + normal(2)*normal(2)
-		);
+		double length = normal.norm();
+			//sqrt(
+			//normal(0)*normal(0) + normal(1)*normal(1) + normal(2)*normal(2)
+		//);
 		m_fan->faceNormal = normal/length;
+		cout << i << "面法向为" << normal / length << endl;
 		this->faceandnormal.push_back(*m_fan);
 	}
 	struct numandnormalST
@@ -34,13 +36,25 @@ PICnew::PICnew(PIC *m_PIC) {
 	for (int i = 0;i < faceandnormal.size();i++) {//遍历所有的面
 		vn[faceandnormal[i].vertexIndex[0]].num++;
 		vn[faceandnormal[i].vertexIndex[0]].normal += faceandnormal[i].faceNormal;
+		vn[faceandnormal[i].vertexIndex[1]].num++;
+		vn[faceandnormal[i].vertexIndex[1]].normal += faceandnormal[i].faceNormal;
+		vn[faceandnormal[i].vertexIndex[2]].num++;
+		vn[faceandnormal[i].vertexIndex[2]].normal += faceandnormal[i].faceNormal;
+			
+		/*cout << "vn[faceandnormal[i].vertexIndex[0]]" 
+			<< vn[faceandnormal[i].vertexIndex[0]].normal << endl;*/
 	}
 	for (int i = 0;i < vn.size();i++) {
 		Vector3d temp(m_PIC->V[i].X, m_PIC->V[i].Y, m_PIC->V[i].Z);
+		/*if (vn[i].normal(0) == 0 && vn[i].normal(1) == 0 && vn[i].normal(2) == 0) {
+			Vector3d pianyi(0, 0.01, 0);
+			Vector3d guiyihua = pianyi / pianyi.norm();
+			vn[i].normal = guiyihua;
+		}*/
 		VertexandNormalST *vandn = new VertexandNormalST();
-
 		vandn->coordinate = temp;
 		vandn->vertexNormal = vn[i].normal / vn[i].num;
+		cout << "第i个顶点的法向是" << vn[i].normal << endl;
 		this->vertexandnormal.push_back(*vandn);
 	}
 

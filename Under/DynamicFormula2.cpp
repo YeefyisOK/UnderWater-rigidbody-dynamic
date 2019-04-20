@@ -1,6 +1,6 @@
 #include "DynamicFormula2.h"
 #include <cmath>
-double DynamicFormula2::mu=1;
+double DynamicFormula2::mu=0.01;
 
 
 //计算每个面上的应力
@@ -33,9 +33,37 @@ VectorXd DynamicFormula2::computetraction(vector<Body*> m_body){
 					int a = m_body[i]->v_onepoint[j].id;//下标符号
 					Vector3d nx = R*m_body[i]->v_onepoint[j].normal;//得到x的法向
 					if (x != y) {
+						//三个顶点
+						Vector3d p0 = m_body[p]->v_onepoint[q].vertex[0];
+						Vector3d p1 = m_body[p]->v_onepoint[q].vertex[1];
+						Vector3d p2 = m_body[p]->v_onepoint[q].vertex[2];
+						//三个顶点的中点
+						Vector3d p01 = (p0 + p1) / 2;
+						Vector3d p02 = (p0 + p2) / 2;
+						Vector3d p12 = (p1 + p2) / 2;
+						//S0
+						Vector3d mid0 = (p0 + p01 + p02) / 3;
+						double S0 = trianglearea(p0, p01, p02);
+						//S1
+						Vector3d mid1 = (p1 + p01 + p12) / 3;
+						double S1 = trianglearea(p1, p01, p12);
+						//S2
+						Vector3d mid2 = (p2 + p02 + p12) / 3;
+						double S2 = trianglearea(p2, p02, p12);
+						//S3
+						Vector3d mid3 = (p01 + p02 + p12) / 3;
+						double S3 = trianglearea(p01, p02, p12);
+						/*Matrix3d KS = computeKij(x, nx, mid0, ny)*S0
+							+ computeKij(x, nx, mid1, ny)*S1
+							+ computeKij(x, nx, mid2, ny)*S2
+							+ computeKij(x, nx, mid3, ny)*S3;*/
 						Matrix3d KS=	computeKij(x, nx, y, ny)*m_body[p]->v_onepoint[q].area;
 						//cout << "K" << endl << computeKij(x, nx, y, ny) << endl;
 						coefficient.block(3*a, 3*b, 3, 3) = KS;
+						/*Matrix3d HS = computeHij(x, nx, mid0, ny)*S0
+							+ computeHij(x, nx, mid1, ny)*S1
+							+ computeHij(x, nx, mid2, ny)*S2
+							+ computeHij(x, nx, mid3, ny)*S3;*/
 						Matrix3d HS = computeHij(x, nx, y, ny)*m_body[p]->v_onepoint[q].area;
 						//cout << "H"<<endl << computeHij(x, nx, y, ny) << endl;
 						H.block(3*a, 3*b, 3, 3) = HS;												
@@ -109,14 +137,14 @@ VectorXd DynamicFormula2::computetraction(vector<Body*> m_body){
 	//	H.block(3 * i, 3 * i, 3, 3) = identity-HSum+0.5*identity;//对角线上的奇异元素是这样计算吗
 	//	coefficient.block(3 * i, 3 * i, 3, 3) =1.5* identity-coefficientSum;
 	//}
-	cout <<"coefficient"<<endl<< coefficient << endl;
+	//cout <<"coefficient"<<endl<< coefficient << endl;
 	//解线性方程组
 	VectorXd b = H * u;
 	//cout << "H:" << endl << H << endl;
 	//cout << "u:" << endl << u << endl;
-	cout << "b:" << endl << b << endl;
+	//cout << "b:" << endl << b << endl;
 	traction = coefficient.fullPivHouseholderQr().solve(b);//sigma=strength NAN!
-	cout << "traction:" << endl << traction << endl;
+	//cout << "乘回去的结果b:" << endl << coefficient*traction << endl;
 	return traction;
 }
 

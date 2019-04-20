@@ -6,6 +6,7 @@
 #include <Eigen/SVD>  
 #include <vector>
 #include "PIC.h"
+#include "iostream"
 using namespace std;
 using namespace Eigen;
 struct VertexandNormalST//顶点坐标和顶点法向

@@ -37,7 +37,7 @@ public:
 	//VectorXd traction;
 	PICnew *m_picnew;
 	vector <onepointST> v_onepoint;//都是物体坐标
-	Body(PICnew *m_picnew,Matrix3d R,Vector3d y, double delta_t, Vector3d ve);
+	Body(PICnew *m_picnew,Matrix3d R,Vector3d y, double delta_t, Vector3d ve, Vector3d ome);
 	void Subexpressions(double &w0, double &w1, double &w2, double &f1, double &f2, double &f3, double &g0, double &g1, double &g2);
 	Matrix3d computeJ();
 	MatrixXd computeKB();

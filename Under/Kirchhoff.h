@@ -1,6 +1,7 @@
 #pragma once
 #include "PIC.h"
 #include <vector>
+#include"PICnew.h"
 #include "Point3D.h"
 #include "Vector6D.h"
 #include <Eigen/Dense>
@@ -24,7 +25,8 @@ public:
 	double fluidDensity;
 	double volume;
 
-	CKirchhoff(PIC m_pic,double m_bodyDensity,double m_fluidDensity);
+	CKirchhoff(PICnew *
+		,double m_bodyDensity,double m_fluidDensity);
 	MatrixXd angular_vector();
 	double area();
 	MatrixXd triangle_area();

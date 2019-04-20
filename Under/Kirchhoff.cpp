@@ -2,25 +2,28 @@
 #include<iostream>
 using namespace Eigen;
 using namespace std;
-CKirchhoff::CKirchhoff(PIC m_pic, double m_bodyDensity, double m_fluidDensity)
+CKirchhoff::CKirchhoff(PICnew *m_picnew, double m_bodyDensity, double m_fluidDensity)
 {
-	numPoints = m_pic.V.size();
-	numFaces = m_pic.F.size();
+	numPoints = m_picnew->vertexandnormal.size();
+		// m_pic.V.size();
+	numFaces = m_picnew->faceandnormal.size();
+		//m_pic.F.size();
 	vertex.resize(numPoints, 3);
 	normal.resize(numPoints, 3);
 	face[0].resize(numFaces, 3);
 	face[1].resize(numFaces, 3);
 	face[2].resize(numFaces, 3);
-	if (m_pic.V.size() > 0) {
+	if (numPoints> 0) {
 		for (int i = 0; i < numPoints; i++) {
 			Vector3d temp(3);
-			temp(0) = m_pic.V[i].X;
-			temp(1) = m_pic.V[i].Y;
-			temp(2) = m_pic.V[i].Z;		
+			temp(0) = m_picnew->vertexandnormal[i].coordinate(0);
+				//m_pic.V[i].X;
+			temp(1) = m_picnew->vertexandnormal[i].coordinate(1);// m_pic.V[i].Y;
+			temp(2) = m_picnew->vertexandnormal[i].coordinate(2);// m_pic.V[i].Z;		
 			vertex.row(i) = temp.transpose();//赋值顶点矩阵
 		}
 	}
-	if (m_pic.VN.size() > 0) {
+	if (numFaces> 0) {
 		/*
 		for (int j = 0;j < numPoints; j++) {
 			Vector3d sum(0,0,0);
@@ -62,14 +65,15 @@ CKirchhoff::CKirchhoff(PIC m_pic, double m_bodyDensity, double m_fluidDensity)
 		}		*/
 		for (int i = 0;i < numPoints;i++) {
 			Vector3d temp(3);
-			temp(0) = m_pic.VN[i].NX;
-			temp(1) = m_pic.VN[i].NY;
-			temp(2) = m_pic.VN[i].NZ;
+			temp(0) = m_picnew->vertexandnormal[i].vertexNormal(0);
+			//m_pic.VN[i].NX;
+			temp(1) = m_picnew->vertexandnormal[i].vertexNormal(1);
+			temp(2) = m_picnew->vertexandnormal[i].vertexNormal(2);
 			//Vector3d temp(m_pic.VN[i].NX, m_pic.VN[i].NY, m_pic.VN[i].NZ);
 			normal.row(i) = temp.transpose();
 		}
 	}
-	if (m_pic.F.size() > 0) {
+	if (numFaces> 0) {
 		for (int k = 0; k < 3; k++){//第几行
 			for (int i = 0; i < numFaces; i++){
 				/*
@@ -78,26 +82,28 @@ CKirchhoff::CKirchhoff(PIC m_pic, double m_bodyDensity, double m_fluidDensity)
 				zuobiao.push_back(m_pic.V[m_pic.F[i].V[k]].Y);
 				zuobiao.push_back(m_pic.V[m_pic.F[i].V[k]].Z);*/
 				Vector3d temp(3);
-				temp(0) = m_pic.V[m_pic.F[i].V[k]].X;
-				temp(1) = m_pic.V[m_pic.F[i].V[k]].Y;
-				temp(2) = m_pic.V[m_pic.F[i].V[k]].Z;
+				int a=m_picnew->faceandnormal[i].vertexIndex[k];//顶点索引
+				temp(0) = m_picnew->vertexandnormal[a].coordinate(0);
+					//m_pic.V[m_pic.F[i].V[k]].X;
+				temp(1) = m_picnew->vertexandnormal[a].coordinate(1);
+				temp(2) = m_picnew->vertexandnormal[a].coordinate(2);
 				face[k].row(i) = temp.transpose();//赋值面矩阵 把索引改成顶点
 			}
 		}
 	}
 	//清除内存
-	m_pic.V.swap(vector<Vertex>());
-	m_pic.VN.swap(vector< FaXiangLiang>());
-	//m_pic.VT.swap(vector< WenLi>());
-	m_pic.F.swap(vector<Mian>());
+	//m_pic.V.swap(vector<Vertex>());
+	//m_pic.VN.swap(vector< FaXiangLiang>());
+	////m_pic.VT.swap(vector< WenLi>());
+	//m_pic.F.swap(vector<Mian>());
 	fluidDensity = m_fluidDensity;
 	bodyDensity = m_bodyDensity;
-	/*
+	
 	cout << "face[0]=" << face[0] << endl;
 	cout << "face[1]=" << face[1] << endl;
 	cout << "face[2]=" << face[2] << endl;
 	cout << "normal=" << normal << endl;
-	cout << "vertex=" << vertex << endl;*/
+	cout << "vertex=" << vertex << endl;
 }
 MatrixXd CKirchhoff::computeKF(double offset){
 	MatrixXd KF(6, 6);
