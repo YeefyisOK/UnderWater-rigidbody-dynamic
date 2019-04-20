@@ -99,11 +99,11 @@ CKirchhoff::CKirchhoff(PICnew *m_picnew, double m_bodyDensity, double m_fluidDen
 	fluidDensity = m_fluidDensity;
 	bodyDensity = m_bodyDensity;
 	
-	cout << "face[0]=" << face[0] << endl;
+	/*cout << "face[0]=" << face[0] << endl;
 	cout << "face[1]=" << face[1] << endl;
 	cout << "face[2]=" << face[2] << endl;
 	cout << "normal=" << normal << endl;
-	cout << "vertex=" << vertex << endl;
+	cout << "vertex=" << vertex << endl;*/
 }
 MatrixXd CKirchhoff::computeKF(double offset){
 	MatrixXd KF(6, 6);
