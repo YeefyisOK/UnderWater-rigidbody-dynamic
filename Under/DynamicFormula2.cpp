@@ -5,18 +5,21 @@ double DynamicFormula2::mu=0.01;
 
 //计算每个面上的应力
 VectorXd DynamicFormula2::computetraction(vector<Body*> m_body){
-	int n = m_body[0]->idnum;//获取总面片数
+	int n = m_body[0]->idnum;//获取总面片数,idnum是静态变量
 	MatrixXd coefficient(3*n, 3*n);
 	coefficient.setZero();
 	VectorXd traction(3 * n);
 	MatrixXd H(3*n, 3*n);
 	H.setZero();
 	VectorXd u(3*n);		
+	Matrix3d identity;
+	identity.setIdentity();
 	for (int p = 0;p < m_body.size();p++) {
 		for (int q = 0;q < m_body[p]->v_onepoint.size();q++) {
 			Matrix3d R = m_body[p]->g.block(0, 0, 3, 3);
 			Vector3d y_ = m_body[p]->g.block(0, 3, 3, 1);//物体在 世界坐标的位置
-			Vector3d y = R*m_body[p]->v_onepoint[q].midpoint+y_;// 得到y
+			Vector3d y = R*m_body[p]->v_onepoint[q].midpoint+y_;
+			// 得到y， q面中点在世界坐标系的位置
 			int b= m_body[p]->v_onepoint[q].id;//下标符号
 			Vector3d ny = R*m_body[p]->v_onepoint[q].normal;//得到y的法向
 			//世界坐标的角速度和速度
@@ -29,7 +32,8 @@ VectorXd DynamicFormula2::computetraction(vector<Body*> m_body){
 				for (int j = 0;j < m_body[i]->v_onepoint.size();j++) {
 					Matrix3d R2 = m_body[i]->g.block(0, 0, 3, 3);
 					Vector3d y_2 = m_body[i]->g.block(0, 3, 3, 1);//物体在 世界坐标的位置
-					Vector3d x = R2*m_body[i]->v_onepoint[j].midpoint+y_2;//得到sourcepoint x
+					Vector3d x = R2*m_body[i]->v_onepoint[j].midpoint+y_2;
+					//得到sourcepoint x
 					int a = m_body[i]->v_onepoint[j].id;//下标符号
 					Vector3d nx = R*m_body[i]->v_onepoint[j].normal;//得到x的法向
 					if (x != y) {
@@ -53,18 +57,19 @@ VectorXd DynamicFormula2::computetraction(vector<Body*> m_body){
 						//S3
 						Vector3d mid3 = (p01 + p02 + p12) / 3;
 						double S3 = trianglearea(p01, p02, p12);
-						/*Matrix3d KS = computeKij(x, nx, mid0, ny)*S0
+						Matrix3d KS = computeKij(x, nx, mid0, ny)*S0
 							+ computeKij(x, nx, mid1, ny)*S1
 							+ computeKij(x, nx, mid2, ny)*S2
-							+ computeKij(x, nx, mid3, ny)*S3;*/
-						Matrix3d KS=	computeKij(x, nx, y, ny)*m_body[p]->v_onepoint[q].area;
-						//cout << "K" << endl << computeKij(x, nx, y, ny) << endl;
-						coefficient.block(3*a, 3*b, 3, 3) = KS;
-						/*Matrix3d HS = computeHij(x, nx, mid0, ny)*S0
+							+ computeKij(x, nx, mid3, ny)*S3;
+					//	Matrix3d KS=	computeKij(x, nx, y, ny)*m_body[p]->v_onepoint[q].area;
+						//cout << "K" << endl << computeKij(x, nx, y, ny) << endl;						
+						coefficient.block(3*a, 3*b, 3, 3) = KS- 0.5*identity;
+						Matrix3d HS = computeHij(x, nx, mid0, ny)*S0
 							+ computeHij(x, nx, mid1, ny)*S1
 							+ computeHij(x, nx, mid2, ny)*S2
-							+ computeHij(x, nx, mid3, ny)*S3;*/
-						Matrix3d HS = computeHij(x, nx, y, ny)*m_body[p]->v_onepoint[q].area;
+							+ computeHij(x, nx, mid3, ny)*S3;
+						//cout<<"看看面积对不对，四个相加"<<S0+S1+S2+S3<<"area："<< m_body[p]->v_onepoint[q].area<<endl;
+					//	Matrix3d HS = computeHij(x, nx, y, ny)*m_body[p]->v_onepoint[q].area;
 						//cout << "H"<<endl << computeHij(x, nx, y, ny) << endl;
 						H.block(3*a, 3*b, 3, 3) = HS;												
 					}	
@@ -100,22 +105,20 @@ VectorXd DynamicFormula2::computetraction(vector<Body*> m_body){
 						//S12
 						Vector3d mid12 = (p12 + p0112 + p0212) / 3;
 						double S12 = trianglearea(p12,p0112,p0212);
-
 						Matrix3d KS = computeKij(x, nx, mid0, ny)*S0
 							+ computeKij(x, nx, mid1, ny)*S1
 							+ computeKij(x, nx, mid2, ny)*S2
 							+ computeKij(x, nx, mid01, ny)*S01
 							+ computeKij(x, nx, mid02, ny)*S02
-							+ computeKij(x, nx, mid12, ny)*S12							;
-						//cout << "K" << endl << computeKij(x, nx, y, ny) << endl;
-						coefficient.block(3 * a, 3 * b, 3, 3) = KS;
+							+ computeKij(x, nx, mid12, ny)*S12;
+						//cout << "K" << endl << computeKij(x, nx, y, ny) << endl;						
+						coefficient.block(3 * a, 3 * b, 3, 3) = KS-0.5*identity;
 						Matrix3d HS = computeHij(x, nx, mid0, ny)*S0
 							+ computeHij(x, nx, mid1, ny)*S1 
 							+ computeHij(x, nx, mid2, ny)*S2
 							+ computeHij(x, nx, mid01, ny)*S01
 							+ computeHij(x, nx, mid02, ny)*S02
 							+ computeHij(x, nx, mid12, ny)*S12;
-
 						//cout << "H" << endl << computeHij(x, nx, y, ny) << endl;
 						H.block(3 * a, 3 * b, 3, 3) = HS;
 					}				
@@ -162,7 +165,7 @@ Matrix3d DynamicFormula2::computeKij(Vector3d x, Vector3d nx, Vector3d y, Vector
 				//cout << "nx(k)" << nx(k) << endl;
 				rknk += (y(k)-x(k) ) / r * nx(k);
 			}
-			res(i, j) = 3 / (4 * 3.1415926*r2)*(y(i) - x(i) )*( y(j) - x(j))/ r2 *rknk;
+			res(i, j) =( 3 / (4 * 3.1415926*r2))*( (y(i) - x(i) )*( y(j) - x(j)) )/ r2 *rknk;
 			//r*r合并增加精度
 			//cout << "i:" << i << "j:" << j <<":"<< res(i, j)<<endl;
 		}

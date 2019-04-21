@@ -9,7 +9,7 @@
 #include "PIC.h"
 using namespace std;
 using namespace Eigen;
-struct onepointST
+struct onepointST//都是物体坐标系
 {
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 	int id;

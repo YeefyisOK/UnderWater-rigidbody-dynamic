@@ -20,8 +20,9 @@
 ////obj读取   ../source/yuanpan.obj
 //int id = 0;
 //long imagewidth = 600;
-//long imageheight = 800;// myproplab balllab开始稳定后面飞了 tuoqiu3lab从数据中看是在晃，但是显示有问题还没调 tuoyuan1稳定，是个竖着的圆盘
-//string name = "H:\\MeshData\\tuoqiu3lab.obj";
+//long imageheight = 800;//从上往下看顺时针
+////myproplab从上往下看顺时针感觉没有之前稳定了 balllab开始稳定后面飞了 tuoqiu3lab一直向下动没有平移，后面显示有问题 tuoyuan1稳定，是个竖着的圆盘
+//string name = "H:\\MeshData\\ballnew1.obj";//ballnew1开始时稳定，后面一直旋转
 //PIC *m_pic = new PIC();
 //PICnew *m_picnew;
 //void drawScene();
@@ -299,9 +300,9 @@
 //	int viewsize=25;
 //	
 //	if (width <= height)
-//		glOrtho(-viewsize, viewsize, -viewsize * (GLdouble)height / (GLdouble)width, viewsize * (GLdouble)height / (GLdouble)width, -10.0, 10.0);
+//		glOrtho(-viewsize, viewsize, -viewsize * (GLdouble)height / (GLdouble)width, viewsize * (GLdouble)height / (GLdouble)width, -15.0, 15.0);
 //	else
-//		glOrtho(-viewsize *(GLdouble)width / (GLdouble)height, viewsize*(GLdouble)width / (GLdouble)height	, -viewsize, viewsize, -10.0, 10.0);
+//		glOrtho(-viewsize *(GLdouble)width / (GLdouble)height, viewsize*(GLdouble)width / (GLdouble)height	, -viewsize, viewsize, -15.0, 15.0);
 //
 //	//glOrtho(-25, 25, -25, 25, -10, 10);
 //}

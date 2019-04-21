@@ -23,8 +23,8 @@ using namespace Eigen;
 int id = 0;
 long imagewidth = 600;
 long imageheight = 800;
-int modelNum =1;//模型数量 sanlengzhui  2个的话改成2 tuoqiu3lab myproplab一开始就不对 balllab可以稳定 tuoyuan1稳定跑一会崩了
-string name[2] = { "H:\\MeshData\\tuoqiu3lab.obj", "H:\\MeshData\\balllab.obj"};//ell0  myproplab
+int modelNum =2;//模型数量 sanlengzhui  2个的话改成2 tuoqiu3lab稳定跑一会突然崩 myproplab一开始就不对 balllab可以稳定跑一会之后和1一样乱转 tuoyuan1稳定跑一会崩了
+string name[2] = { "H:\\MeshData\\balllab.obj", "H:\\MeshData\\balllab.obj"};//ell0  myproplab
 //模型数组
 vector<PIC*> v_pic;
 vector<PICnew*>  v_picnew;

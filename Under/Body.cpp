@@ -12,6 +12,7 @@ Body::Body(PICnew *m_picnew, Matrix3d R, Vector3d y,double delta_t,Vector3d ve,V
 		onepointST *aonepoint = new onepointST();
 		aonepoint->id=idnum ;//静态变量，只与类有关
 		idnum++;
+		//法向是面法向
 		aonepoint->normal = m_picnew->faceandnormal[i].faceNormal;
 		//这个面上三点坐标
 		Vector3d p0 = m_picnew->vertexandnormal[m_picnew->faceandnormal[i].vertexIndex[0]].coordinate;
@@ -22,9 +23,9 @@ Body::Body(PICnew *m_picnew, Matrix3d R, Vector3d y,double delta_t,Vector3d ve,V
 		aonepoint->vertex[1] = p1;
 		aonepoint->vertex[2] = p2;
 
-		double a = sqrt((p0 - p1)(0)*(p0 - p1)(0) + (p0 - p1)(1)*(p0 - p1)(1) + (p0 - p1)(2)*(p0 - p1)(2));
-		double b = sqrt((p0 - p2)(0)*(p0 - p2)(0) + (p0 - p2)(1)*(p0 - p2)(1) + (p0 - p2)(2)*(p0 - p2)(2));
-		double c = sqrt((p2 - p1)(0)*(p2 - p1)(0) + (p2 - p1)(1)*(p2 - p1)(1) + (p2 - p1)(2)*(p2 - p1)(2));
+		double a = (p0 - p1).norm();
+		double b = (p0 - p2).norm();
+		double c = (p2 - p1).norm();
 		double p = (a + b + c) / 2;
 		aonepoint->area = sqrt(p*(p - a)*(p - b)*(p - c) );
 		aonepoint->midpoint =  (p0 + p1 + p2) / 3;
