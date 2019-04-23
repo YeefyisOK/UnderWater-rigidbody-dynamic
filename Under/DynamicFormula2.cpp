@@ -1,6 +1,6 @@
 #include "DynamicFormula2.h"
 #include <cmath>
-double DynamicFormula2::mu=0.01;
+double DynamicFormula2::mu=0.5;//
 
 
 //计算每个面上的应力
@@ -63,7 +63,7 @@ VectorXd DynamicFormula2::computetraction(vector<Body*> m_body){
 							+ computeKij(x, nx, mid3, ny)*S3;
 					//	Matrix3d KS=	computeKij(x, nx, y, ny)*m_body[p]->v_onepoint[q].area;
 						//cout << "K" << endl << computeKij(x, nx, y, ny) << endl;						
-						coefficient.block(3*a, 3*b, 3, 3) = KS- 0.5*identity;
+						coefficient.block(3*a, 3*b, 3, 3) = KS;
 						Matrix3d HS = computeHij(x, nx, mid0, ny)*S0
 							+ computeHij(x, nx, mid1, ny)*S1
 							+ computeHij(x, nx, mid2, ny)*S2
@@ -147,7 +147,20 @@ VectorXd DynamicFormula2::computetraction(vector<Body*> m_body){
 	//cout << "u:" << endl << u << endl;
 	//cout << "b:" << endl << b << endl;
 	traction = coefficient.fullPivHouseholderQr().solve(b);//sigma=strength NAN!
+	int k = 0;//taction索引
+	//计算整个面上的力
+	for (int p = 0;p < m_body.size();p++) {
+		for (int q = 0;q < m_body[p]->v_onepoint.size();q++) {
+			//遍历所有的物体所有面
+			double S = m_body[p]->v_onepoint[q].area;
+			traction(k) *= S;
+			traction(k+1) *= S;
+			traction(k+2) *= S;
+			k += 3;
+		}
+	}
 	//cout << "乘回去的结果b:" << endl << coefficient*traction << endl;
+	//cout <<"traction:"<< traction << endl;
 	return traction;
 }
 
@@ -187,7 +200,7 @@ Matrix3d DynamicFormula2::computeHij(Vector3d x, Vector3d nx, Vector3d y, Vector
 	double r2 = pow(x(0) - y(0), 2) +
 		pow(x(1) - y(1), 2) + pow(x(2) - y(2), 2);
 	double r = sqrt(r2);//r的平方
-	Vector3d n = (x-y) / r;//y到x的单位向量
+	//Vector3d n = (y-x) / r;//y到x的单位向量
 	double rlnl=0;
 	for (int l = 0;l < 3;l++) {
 		rlnl += (y(l) - x(l)) * ny(l);
@@ -201,10 +214,10 @@ Matrix3d DynamicFormula2::computeHij(Vector3d x, Vector3d nx, Vector3d y, Vector
 					(3 * (dirac(i, j)* (y(k) - x(k)) / (r2 * r2) + dirac(j, k) * (y(i) - x(i)) / (r2 * r2) )
 						- 30 * (y(i) - x(i))  * (y(j) - x(j)) * (y(k) - x(k)) / (r2*r2*r2)
 					)  *rlnl
-						+ 3 * ( n(i)*(y(j) - x(j))  * (y(k) - x(k)) / (r2*r2*r) 
-										+ n(k) *(y(i) - x(i)) * (y(j) - x(j) ) / ( r2*r2*r) 
+						+ 3 * ( ny(i)*(y(j) - x(j))  * (y(k) - x(k)) / (r2*r2*r) 
+										+ ny(k) *(y(i) - x(i)) * (y(j) - x(j) ) / ( r2*r2*r) 
 								 )
-						+ 2 * dirac(i, k)*n(j)/(r2*r)
+						+ 2 * dirac(i, k)*ny(j)/(r2*r)
 				)*nx(k);
 				//cout << "H i =" << i << "j=" << j << H(i, j) << endl;
 			}

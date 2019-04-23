@@ -21,8 +21,8 @@
 //int id = 0;
 //long imagewidth = 600;
 //long imageheight = 800;//从上往下看顺时针
-////myproplab从上往下看顺时针感觉没有之前稳定了 balllab开始稳定后面飞了 tuoqiu3lab一直向下动没有平移，后面显示有问题 tuoyuan1稳定，是个竖着的圆盘
-//string name = "H:\\MeshData\\ballnew1.obj";//ballnew1开始时稳定，后面一直旋转
+////myproplab从上往下看顺时针感觉没有之前稳定了 balllab开始稳定后面飞了 tuoqiu3lab一直向下动没有晃，后面显示有问题 tuoyuan1稳定向下也没晃，是个竖着的圆盘
+//string name = "H:\\MeshData\\balllab.obj";//ballnew1开始时稳定，后面一直旋转
 //PIC *m_pic = new PIC();
 //PICnew *m_picnew;
 //void drawScene();

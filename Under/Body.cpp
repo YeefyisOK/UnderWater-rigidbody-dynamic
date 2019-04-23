@@ -14,6 +14,7 @@ Body::Body(PICnew *m_picnew, Matrix3d R, Vector3d y,double delta_t,Vector3d ve,V
 		idnum++;
 		//法向是面法向
 		aonepoint->normal = m_picnew->faceandnormal[i].faceNormal;
+		//cout<<i<<"个面的面法向"<< m_picnew->faceandnormal[i].faceNormal;
 		//这个面上三点坐标
 		Vector3d p0 = m_picnew->vertexandnormal[m_picnew->faceandnormal[i].vertexIndex[0]].coordinate;
 		Vector3d p1 = m_picnew->vertexandnormal[m_picnew->faceandnormal[i].vertexIndex[1]].coordinate;
@@ -305,10 +306,10 @@ void Body::nextTime() {
 	Vector3d tempy = g.block(0, 3, 3, 1);
 	Matrix3d Y = so3_ad(tempy);
 	VectorXd tf = tsfs2tf(Y);
-	cout << "R" << g.block(0,0,3,3)<<endl<<"y"<<tempy << endl;
+	cout <<"R" << g.block(0,0,3,3)<<endl<<"y"<<tempy << endl;
 	cout << "tf物体坐标系的力矩和力" << tf << endl;
 	VectorXd epsilon_last = epsilon;
-	cout << "epsilon伊普西龙伊普西龙伊普西龙伊普西龙!:" << epsilon << endl;
+	cout <<  "epsilon伊普西龙伊普西龙伊普西龙伊普西龙!:" << epsilon << endl;
 	VectorXd delta_epsilon = delta_t * K.inverse()*(se3_ad(delta_t*epsilon_last)*K*epsilon_last + tf);
 	VectorXd epsilon_now = epsilon_last + delta_epsilon;
 	VectorXd res = se3_DEP(epsilon_now, epsilon_last, g);
@@ -359,7 +360,7 @@ void Body::computetsfs(VectorXd traction) {
 	Matrix3d R = g.block(0, 0, 3, 3);
 	Vector3d y = g.block(0, 3, 3, 1);
 	for (int i = 0;i < faceNum;i++) {
-		Vector3d faceifs=traction.block(3 * i, 0, 3, 1) * this->v_onepoint[i].area;//第i个面上的力
+		Vector3d faceifs=traction.block(3 * i, 0, 3, 1) ;//第i个面上的力  * this->v_onepoint[i].area
 		fs += faceifs;
 		Vector3d r = R*(v_onepoint[i].midpoint - masscenter);
 		Vector3d faceits = r.cross(faceifs);//第i面上计算得到的力矩
@@ -370,5 +371,5 @@ void Body::computetsfs(VectorXd traction) {
 	temptsfs.block(0, 0, 3, 1) = ts;//合外力矩
 	temptsfs.block(3, 0, 3, 1) = fs;//合外力
 	this->tsfs = temptsfs;//赋值成员变量
-	cout << "computetsfs得到的结果" << tsfs << endl;
+	cout << "computetsfs得到的结果"<< tsfs << endl;
 }
