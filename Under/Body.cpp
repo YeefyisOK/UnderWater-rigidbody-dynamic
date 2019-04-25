@@ -123,7 +123,7 @@ Matrix3d Body::computeJ() {
 		intg[9] += d2 * (x0*g0z + x1 * g1z + x2 * g2z);
 	}
 	for (int i = 0;i < 10;i++) {
-		intg[i] *= mult[i];
+		intg[i] *= 0.00001*mult[i];
 	}
 	volume = intg[0];
 	cout << "volume" << volume << endl;

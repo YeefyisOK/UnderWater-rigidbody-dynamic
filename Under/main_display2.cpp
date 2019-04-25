@@ -25,18 +25,18 @@ long imagewidth = 600;
 long imageheight = 800;
 int modelNum =2;//模型数量 sanlengzhui  2个的话改成2 
 //tuoqiu3lab力不断增大,并旋转 myproplab一开始对 balllab开始稳定但感觉合外力计算不对,后面开始转和1结果差不多 tuoyuan1稳定跑一会崩了
-string name[] = { "H:\\MeshData\\tuoqiu3lab.obj", "H:\\MeshData\\balllab.obj"
+string name[] = { "H:\\MeshData\\cube.obj", "H:\\MeshData\\cube.obj"
 , "H:\\MeshData\\balllab.obj" , "H:\\MeshData\\balllab.obj"
 , "H:\\MeshData\\balllab.obj" };//ell0  myproplab
 //模型数组
 vector<PIC*> v_pic;
 vector<PICnew*>  v_picnew;
 vector<Body*> v_body;
-Vector3d y_0(0, 10, 0);
-Vector3d y_1(-10, 5, 0);
-Vector3d y_2(0, 2, 0);
-Vector3d y_3(0, -2, 0);
-Vector3d y_4(0, -6, 0);
+Vector3d y_0(0, 22, 0);
+Vector3d y_1(-10, 10, 0);
+Vector3d y_2(0, -7, 0);
+Vector3d y_3(0, -10, 0);
+Vector3d y_4(0, -16, 0);
 Vector3d y[] = { y_0,y_1,y_2,y_3,y_4 };
 //窗口的大小
 GLdouble windowWidth;
@@ -55,10 +55,10 @@ double mouseX, mouseY;
 double cameraDistance = 0;
 double cameraAngleX;
 double cameraAngleY;
-Vector3d ve1(0, -150, 0);
+Vector3d ve1(0, -200, 0);//
 Vector3d ve2(0, 0, 0);
 Vector3d ve[] = { ve1 ,ve2,ve1,ve1,ve1};
-Vector3d ome1(0, 0, 0);
+Vector3d ome1(0, 0, 0);//0 0 10
 Vector3d ome2(0, 0, 0);
 Vector3d ome[] = { ome1,ome2,ome1,ome1,ome1 };
 void ReadPIC()//把所有obj文件读取到v_pic中,v_pic转化v_picnew
