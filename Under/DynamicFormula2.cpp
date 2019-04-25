@@ -1,6 +1,6 @@
 #include "DynamicFormula2.h"
 #include <cmath>
-double DynamicFormula2::mu=0.001;//
+double DynamicFormula2::mu=0.002;//
 
 
 //计算每个面上的应力
@@ -18,32 +18,19 @@ VectorXd DynamicFormula2::computetraction(vector<Body*> m_body){
 		for (int q = 0;q < m_body[p]->v_onepoint.size();q++) {//field point
 			Matrix3d R = m_body[p]->g.block(0, 0, 3, 3);
 			Vector3d y_ = m_body[p]->g.block(0, 3, 3, 1);//物体在世界坐标的位置
-			Vector3d y = R*m_body[p]->v_onepoint[q].midpoint+y_;//世界坐标系下field点的位置
+			Vector3d y = m_body[p]->v_onepoint[q].midpoint;//物体坐标系下field点的位置
 			//cout << "看看y" << y << endl; 不需要y，面的中点了
 			// 得到y， q面中点在世界坐标系的位置
 			int b= m_body[p]->v_onepoint[q].id;//下标符号
 			Vector3d ny = R*m_body[p]->v_onepoint[q].normal;//得到y的法向
-			//世界坐标的角速度和速度
-			Vector3d w = R*m_body[p]->epsilon.block(0, 0, 3, 1);
-			Vector3d v = R*m_body[p]->epsilon.block(3, 0, 3, 1);
-			//cout << "速度是！！" << v << endl;
-			//应该是世界坐标的速度
-			Vector3d tempw = m_body[p]->epsilon.block(0, 0, 3, 1);
-			Vector3d tempv = m_body[p]->epsilon.block(3, 0, 3, 1);
-			Vector3d tempy = m_body[p]->v_onepoint[q].midpoint;
-			Matrix3d Y(3, 3);
-			Y(0, 0) = 0;
-			Y(0, 1) = -tempy(2);
-			Y(0, 2) = tempy(1);
-			Y(1, 0) = tempy(2);
-			Y(1, 1) = 0;
-			Y(1, 2) = -tempy(0);
-			Y(2, 0) = -tempy(1);
-			Y(2, 1) = tempy(0);
-			Y(2, 2) = 0;
-			u.block(3 * b,0,3,1) = 
-				R*(tempw.cross(tempy) 
-				+ tempv);
+
+			Vector3d w = m_body[p]->epsilon.block(0, 0, 3, 1);
+			Vector3d v = m_body[p]->epsilon.block(3, 0, 3, 1);
+			u.block(3 * b,0,3,1) = R*(w.cross(y) + v);
+
+			Vector3d p0 = R * m_body[p]->v_onepoint[q].vertex[0] + y_;
+			Vector3d p1 = R * m_body[p]->v_onepoint[q].vertex[1] + y_;
+			Vector3d p2 = R * m_body[p]->v_onepoint[q].vertex[2] + y_;
 			for (int i = 0;i < m_body.size();i++) {//source point
 				for (int j = 0;j < m_body[i]->v_onepoint.size();j++) {
 					Matrix3d R2 = m_body[i]->g.block(0, 0, 3, 3);
@@ -56,9 +43,6 @@ VectorXd DynamicFormula2::computetraction(vector<Body*> m_body){
 					if (p==i&&q==j) {//对角线
 						//cout << "计算对角线" << endl;
 						//三个顶点
-						Vector3d p0 = m_body[p]->v_onepoint[q].vertex[0];
-						Vector3d p1 = m_body[p]->v_onepoint[q].vertex[1];
-						Vector3d p2 = m_body[p]->v_onepoint[q].vertex[2];
 						//三个顶点的中点
 						Vector3d p01 = (p0 + p1) / 2;
 						Vector3d p02 = (p0 + p2) / 2;
@@ -90,7 +74,7 @@ VectorXd DynamicFormula2::computetraction(vector<Body*> m_body){
 						//中间三角形继续划分
 						//顶点中点的中点
 						Vector3d p01020112 = (p0102 + p0112) / 2;
-						Vector3d p01020212 = (p0112 + p0212) / 2;
+						Vector3d p01020212 = (p0102 + p0212) / 2;
 						Vector3d p01120212 = (p0112 + p0212) / 2;
 						//S0102
 						Vector3d mid0102 = (p0102 + p01020112 + p01020212) / 3;
@@ -119,18 +103,15 @@ VectorXd DynamicFormula2::computetraction(vector<Body*> m_body){
 							+ computeHij(x, nx, mid01, ny)*S01
 							+ computeHij(x, nx, mid02, ny)*S02
 							+ computeHij(x, nx, mid12, ny)*S12
-							+ computeKij(x, nx, mid0102, ny)*S0102
-							+ computeKij(x, nx, mid0112, ny)*S0112
-							+ computeKij(x, nx, mid0212, ny)*S0212;
+							+ computeHij(x, nx, mid0102, ny)*S0102
+							+ computeHij(x, nx, mid0112, ny)*S0112
+							+ computeHij(x, nx, mid0212, ny)*S0212;
 						//cout << "H" << endl << computeHij(x, nx, y, ny) << endl;
 						H.block(3 * a, 3 * b, 3, 3) = HS;
 					}	
 					else{//非对角线
 						//cout << "计算非对角线" << endl;
 						//三个顶点
-						Vector3d p0 = m_body[p]->v_onepoint[q].vertex[0];
-						Vector3d p1 = m_body[p]->v_onepoint[q].vertex[1];
-						Vector3d p2 = m_body[p]->v_onepoint[q].vertex[2];
 						//三个顶点的中点
 						Vector3d p01 = (p0 + p1) / 2;
 						Vector3d p02 = (p0 + p2) / 2;
@@ -194,6 +175,7 @@ VectorXd DynamicFormula2::computetraction(vector<Body*> m_body){
 		for (int q = 0;q < m_body[p]->v_onepoint.size();q++) {
 			//遍历所有的物体所有面
 			double S = m_body[p]->v_onepoint[q].area;
+			//cout << q << "个三角形的面积是" << S << endl;
 			traction(k) *= S;
 			traction(k+1) *= S;
 			traction(k+2) *= S;

@@ -123,7 +123,7 @@ Matrix3d Body::computeJ() {
 		intg[9] += d2 * (x0*g0z + x1 * g1z + x2 * g2z);
 	}
 	for (int i = 0;i < 10;i++) {
-		intg[i] *= 0.00001*mult[i];
+		intg[i] *= mult[i];
 	}
 	volume = intg[0];
 	cout << "volume" << volume << endl;
@@ -140,11 +140,10 @@ Matrix3d Body::computeJ() {
 	inertia(0, 1) = inertia(1, 0) = -(intg[7] - bodyMass * cm(0)*cm(1));
 	inertia(1, 2) = inertia(2, 1) = -(intg[8] - bodyMass * cm(1)*cm(2));
 	inertia(0, 2) = inertia(2, 0) = -(intg[9] - bodyMass * cm(2)*cm(0));
-	Matrix3d R = g.block(0, 0, 3, 3);
-	Vector3d y = g.block(0, 3, 3, 1);
+
 	this->masscenter =  cm;
 
-	return inertia;
+	return inertia;//0.01*
 }
 Matrix3d Body::so3_cay(Vector3d tempw) {
 	Matrix3d daOmega = so3_ad(tempw);
@@ -207,7 +206,7 @@ VectorXd Body::tsfs2tf(Matrix3d Y) {
 	Matrix3d Rt = R.transpose();
 	Matrix3d zero = Matrix3d::Zero();
 	//zero.setZero(3, 3);
-	Matrix3d negRtY = zero - Rt * Y;
+	Matrix3d negRtY = zero ;//- Rt * Y
 	MatrixXd trans(6, 6);//¾ØÕó·Ö¿é¸³Öµ
 	trans.block(0, 0, 3, 3) = Rt;
 	trans.block(0, 3, 3, 3) = negRtY;

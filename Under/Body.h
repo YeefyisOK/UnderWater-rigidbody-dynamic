@@ -30,7 +30,7 @@ public:
 	int faceNum;
 	double delta_t ;
 	double bodyMass;//computeJ得到了mass
-	double bodyDensity= 1.75;//还没用到 no 计算质心用到了
+	double bodyDensity=0.5;//还没用到 no 计算质心用到了  1.75
 	double fluidDensity= 0.98;
 	double volume;
 	Vector3d masscenter;//物体坐标系的质心，因为物体一直在运动
