@@ -1,7 +1,6 @@
 #include "DynamicFormula2.h"
 #include <cmath>
-double DynamicFormula2::mu=0.002;//
-
+double DynamicFormula2::mu=0.001;//
 
 //计算每个面上的应力
 VectorXd DynamicFormula2::computetraction(vector<Body*> m_body){
@@ -27,10 +26,23 @@ VectorXd DynamicFormula2::computetraction(vector<Body*> m_body){
 			Vector3d w = m_body[p]->epsilon.block(0, 0, 3, 1);
 			Vector3d v = m_body[p]->epsilon.block(3, 0, 3, 1);
 			u.block(3 * b,0,3,1) = R*(w.cross(y) + v);
-
+			//三个顶点
 			Vector3d p0 = R * m_body[p]->v_onepoint[q].vertex[0] + y_;
 			Vector3d p1 = R * m_body[p]->v_onepoint[q].vertex[1] + y_;
 			Vector3d p2 = R * m_body[p]->v_onepoint[q].vertex[2] + y_;
+			//三个顶点的中点
+			Vector3d p01 = (p0 + p1) / 2;
+			Vector3d p02 = (p0 + p2) / 2;
+			Vector3d p12 = (p1 + p2) / 2;
+			//S0
+			Vector3d mid0 = (p0 + p01 + p02) / 3;
+			double S0 = trianglearea(p0, p01, p02);
+			//S1
+			Vector3d mid1 = (p1 + p01 + p12) / 3;
+			double S1 = trianglearea(p1, p01, p12);
+			//S2
+			Vector3d mid2 = (p2 + p02 + p12) / 3;
+			double S2 = trianglearea(p2, p02, p12);
 			for (int i = 0;i < m_body.size();i++) {//source point
 				for (int j = 0;j < m_body[i]->v_onepoint.size();j++) {
 					Matrix3d R2 = m_body[i]->g.block(0, 0, 3, 3);
@@ -40,22 +52,7 @@ VectorXd DynamicFormula2::computetraction(vector<Body*> m_body){
 					//得到sourcepoint x
 					int a = m_body[i]->v_onepoint[j].id;//下标符号
 					Vector3d nx = R*m_body[i]->v_onepoint[j].normal;//得到x的法向
-					if (p==i&&q==j) {//对角线
-						//cout << "计算对角线" << endl;
-						//三个顶点
-						//三个顶点的中点
-						Vector3d p01 = (p0 + p1) / 2;
-						Vector3d p02 = (p0 + p2) / 2;
-						Vector3d p12 = (p1 + p2) / 2;
-						//S0
-						Vector3d mid0 = (p0 + p01 + p02) / 3;
-						double S0 = trianglearea(p0, p01, p02);
-						//S1
-						Vector3d mid1 = (p1 + p01 + p12) / 3;
-						double S1 = trianglearea(p1, p01, p12);
-						//S2
-						Vector3d mid2 = (p2 + p02 + p12) / 3;
-						double S2 = trianglearea(p2, p02, p12);
+					if (a==b) {//对角线
 						//中间三角形继续划分
 						//顶点中点的中点
 						Vector3d p0102 = (p01 + p02) / 2;
@@ -70,7 +67,6 @@ VectorXd DynamicFormula2::computetraction(vector<Body*> m_body){
 						//S12
 						Vector3d mid12 = (p12 + p0112 + p0212) / 3;
 						double S12 = trianglearea(p12, p0112, p0212);
-
 						//中间三角形继续划分
 						//顶点中点的中点
 						Vector3d p01020112 = (p0102 + p0112) / 2;
@@ -85,7 +81,6 @@ VectorXd DynamicFormula2::computetraction(vector<Body*> m_body){
 						//S0212
 						Vector3d mid0212 = (p0212 + p01020212 + p01120212) / 3;
 						double S0212 = trianglearea(p0212, p01020212, p01120212);
-
 						Matrix3d KS = computeKij(x, nx, mid0, ny)*S0
 							+ computeKij(x, nx, mid1, ny)*S1
 							+ computeKij(x, nx, mid2, ny)*S2
@@ -97,34 +92,19 @@ VectorXd DynamicFormula2::computetraction(vector<Body*> m_body){
 							+ computeKij(x, nx, mid0212, ny)*S0212;
 						//cout << "K" << endl << computeKij(x, nx, y, ny) << endl;						
 						coefficient.block(3 * a, 3 * b, 3, 3) = KS - 0.5*identity;
-						Matrix3d HS = computeHij(x, nx, mid0, ny)*S0
-							+ computeHij(x, nx, mid1, ny)*S1
-							+ computeHij(x, nx, mid2, ny)*S2
-							+ computeHij(x, nx, mid01, ny)*S01
-							+ computeHij(x, nx, mid02, ny)*S02
-							+ computeHij(x, nx, mid12, ny)*S12
-							+ computeHij(x, nx, mid0102, ny)*S0102
-							+ computeHij(x, nx, mid0112, ny)*S0112
-							+ computeHij(x, nx, mid0212, ny)*S0212;
-						//cout << "H" << endl << computeHij(x, nx, y, ny) << endl;
-						H.block(3 * a, 3 * b, 3, 3) = HS;
-					}	
+						//Matrix3d HS = computeHij(x, nx, mid0, ny)*S0
+						//	+ computeHij(x, nx, mid1, ny)*S1
+						//	+ computeHij(x, nx, mid2, ny)*S2
+						//	+ computeHij(x, nx, mid01, ny)*S01
+						//	+ computeHij(x, nx, mid02, ny)*S02
+						//	+ computeHij(x, nx, mid12, ny)*S12
+						//	+ computeHij(x, nx, mid0102, ny)*S0102
+						//	+ computeHij(x, nx, mid0112, ny)*S0112
+						//	+ computeHij(x, nx, mid0212, ny)*S0212;
+						////cout << "H" << endl << computeHij(x, nx, y, ny) << endl;
+						//H.block(3 * a, 3 * b, 3, 3) = HS;
+					}
 					else{//非对角线
-						//cout << "计算非对角线" << endl;
-						//三个顶点
-						//三个顶点的中点
-						Vector3d p01 = (p0 + p1) / 2;
-						Vector3d p02 = (p0 + p2) / 2;
-						Vector3d p12 = (p1 + p2) / 2;
-						//S0
-						Vector3d mid0 = (p0 + p01 + p02) / 3;
-						double S0 = trianglearea(p0, p01, p02);
-						//S1
-						Vector3d mid1 = (p1 + p01 + p12) / 3;
-						double S1 = trianglearea(p1, p01, p12);
-						//S2
-						Vector3d mid2 = (p2 + p02 + p12) / 3;
-						double S2 = trianglearea(p2, p02, p12);
 						//S3
 						Vector3d mid3 = (p01 + p02 + p12) / 3;
 						double S3 = trianglearea(p01, p02, p12);
@@ -138,9 +118,8 @@ VectorXd DynamicFormula2::computetraction(vector<Body*> m_body){
 						Matrix3d HS = computeHij(x, nx, mid0, ny)*S0
 							+ computeHij(x, nx, mid1, ny)*S1
 							+ computeHij(x, nx, mid2, ny)*S2
-							+ computeHij(x, nx, mid3, ny)*S3;
-						//cout<<"看看面积对不对，四个相加"<<S0+S1+S2+S3<<"area："<< m_body[p]->v_onepoint[q].area<<endl;
-					//	Matrix3d HS = computeHij(x, nx, y, ny)*m_body[p]->v_onepoint[q].area;
+							+ computeHij(x, nx, mid3, ny)*S3;						
+						//Matrix3d HS = computeHij(x, nx, y, ny)*m_body[p]->v_onepoint[q].area;
 						//cout << "H"<<endl << computeHij(x, nx, y, ny) << endl;
 						H.block(3 * a, 3 * b, 3, 3) = HS;
 					}				
@@ -148,20 +127,31 @@ VectorXd DynamicFormula2::computetraction(vector<Body*> m_body){
 			}
 		}
 	}
-	//for (int i = 0;i < n;i++) {
-	//	Matrix3d HSum;
-	//	HSum.setZero();
-	//	Matrix3d coefficientSum;
-	//	coefficientSum.setZero();
-	//	for (int j = 0;j < n&&i!=j;j++) {
-	//		HSum += H.block(3 * i, 3 * j, 3, 3);
-	//		coefficientSum += coefficient.block(3 * i, 3 * j, 3, 3);
+	Matrix3d zero;
+	zero.setZero();
+	//Matrix3d HSum;
+	//HSum.setZero();
+	//for (int p = 0;p < m_body.size();p++) {//遍历所有模型
+	//	for (int i = 0;i < m_body[p]->v_onepoint.size();i++) {//模型的局部行
+	//		int row = m_body[p]->v_onepoint[i].id;//行数
+	//		HSum.setZero();
+	//		for (int j = 0;j < m_body[p]->v_onepoint.size();j++) {//模型的局部列
+	//			int col= m_body[p]->v_onepoint[j].id;//列数
+	//			HSum += H.block(row * 3, col * 3, 3, 3);
+	//		}
+	//		H.block(row * 3, row * 3, 3, 3) = zero - HSum;
 	//	}
-	//	Matrix3d identity;
-	//	identity.setIdentity();
-	//	H.block(3 * i, 3 * i, 3, 3) = identity-HSum+0.5*identity;//对角线上的奇异元素是这样计算吗
-	//	coefficient.block(3 * i, 3 * i, 3, 3) =1.5* identity-coefficientSum;
 	//}
+
+
+	for (int i = 0;i < n;i++) {
+		Matrix3d HSum;
+		HSum.setZero();
+		for (int j = 0;j < n&&i!=j;j++) {
+			HSum += H.block(3 * i, 3 * j, 3, 3);
+		}
+		H.block(3 * i, 3 * i, 3, 3) = zero-HSum;//
+	}
 	//cout <<"coefficient"<<endl<< coefficient << endl;
 	//解线性方程组
 	VectorXd b = H * u;
