@@ -25,7 +25,7 @@ long imagewidth = 600;
 long imageheight = 800;
 int modelNum =1;//模型数量 sanlengzhui  2个的话改成2 
 //tuoqiu3lab力不断增大,并旋转 myproplab一开始对 balllab开始稳定但感觉合外力计算不对,后面开始转和1结果差不多 tuoyuan1稳定跑一会崩了
-string name[] = { "H:\\MeshData\\esball24fd.obj", "H:\\MeshData\\cube.obj"
+string name[] = { "H:\\MeshData\\cube.obj", "H:\\MeshData\\cube.obj"
 , "H:\\MeshData\\balllab.obj" , "H:\\MeshData\\esball40fd.obj"
 , "H:\\MeshData\\r4ball24fd.obj" };//ell0  myproplab
 //模型数组

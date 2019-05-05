@@ -15,6 +15,7 @@ struct onepointST//都是物体坐标系
 	int id;
 	Vector3d midpoint;//中点
 	Vector3d vertex[3];//三个顶点坐标
+	//Vector3d normal3[3];
 	Vector3d normal;//法向
 	double area;
 };

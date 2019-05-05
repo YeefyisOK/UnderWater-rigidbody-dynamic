@@ -19,10 +19,18 @@ Body::Body(PICnew *m_picnew, Matrix3d R, Vector3d y,double delta_t,Vector3d ve,V
 		Vector3d p0 = m_picnew->vertexandnormal[m_picnew->faceandnormal[i].vertexIndex[0]].coordinate;
 		Vector3d p1 = m_picnew->vertexandnormal[m_picnew->faceandnormal[i].vertexIndex[1]].coordinate;
 		Vector3d p2 = m_picnew->vertexandnormal[m_picnew->faceandnormal[i].vertexIndex[2]].coordinate;
+		
+		//Vector3d np0 = m_picnew->vertexandnormal[m_picnew->faceandnormal[i].vertexIndex[0]].vertexNormal;
+		//Vector3d np1 = m_picnew->vertexandnormal[m_picnew->faceandnormal[i].vertexIndex[1]].vertexNormal;
+		//Vector3d np2 = m_picnew->vertexandnormal[m_picnew->faceandnormal[i].vertexIndex[2]].vertexNormal;
 
 		aonepoint->vertex[0] = p0;
 		aonepoint->vertex[1] = p1;
 		aonepoint->vertex[2] = p2;
+
+	/*	aonepoint->normal3[0] = np0;
+		aonepoint->normal3[1] = np1;
+		aonepoint->normal3[2] = np2;*/
 
 		double a = (p0 - p1).norm();
 		double b = (p0 - p2).norm();
