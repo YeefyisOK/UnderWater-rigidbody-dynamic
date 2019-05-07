@@ -7,6 +7,7 @@
 //#include"Quaternion.h"
 #include"Body.h"
 #include <iostream>
+#define yipusilon 0.0000001
 using namespace std;
 using namespace Eigen;
 class DynamicFormula2
@@ -19,6 +20,8 @@ public:
 	static Matrix3d computef(Vector3d p1, Vector3d p2, Vector3d p3
 		, double yipu, double yita, Vector3d x, Vector3d nx
 		, Vector3d ny, int flag);
+	static Matrix3d digui(Vector3d p0, Vector3d p1, Vector3d p2,int n
+		,double area, int flag, Vector3d x, Vector3d nx, Vector3d ny);
 
 	static double dirac(int a, int b);
 	static double trianglearea(Vector3d p0,Vector3d p01,Vector3d p02) {

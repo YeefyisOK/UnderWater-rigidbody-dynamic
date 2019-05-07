@@ -55,6 +55,14 @@ VectorXd DynamicFormula2::computetraction(vector<Body*> m_body){
 					int a = m_body[i]->v_onepoint[j].id;//下标符号
 					Vector3d nx = R*m_body[i]->v_onepoint[j].normal;//得到x的法向
 					if (a==b) {//对角线
+						int xifen_num = 7;
+						double area = trianglearea(p0, p1, p2)/pow(4,xifen_num);
+						Matrix3d KS1 = digui(p0, p1, p2, xifen_num, area, 0, x, nx, ny);
+						//cout << "对角线的KS是" << KS1 << endl;
+						coefficient.block(3 * a, 3 * b, 3, 3) = KS1 - 0.5*identity;	
+						/*Matrix3d HS1= digui(p0, p1, p2, xifen_num, area, 1, x, nx, ny);
+						H.block(3 * a, 3 * b, 3, 3) = HS1;*/
+						/*
 						//中间三角形继续划分
 						//顶点中点的中点
 						Vector3d p0102 = (p01 + p02) / 2;
@@ -92,7 +100,7 @@ VectorXd DynamicFormula2::computetraction(vector<Body*> m_body){
 							+ computeKij(x, nx, mid0102, ny)*S0102
 							+ computeKij(x, nx, mid0112, ny)*S0112
 							+ computeKij(x, nx, mid0212, ny)*S0212;
-						//cout << "K" << endl << computeKij(x, nx, y, ny) << endl;						
+						cout << "KS" << endl <<KS << endl;						
 						coefficient.block(3 * a, 3 * b, 3, 3) = KS - 0.5*identity;
 						//Matrix3d HS = computeHij(x, nx, mid0, ny)*S0
 						//	+ computeHij(x, nx, mid1, ny)*S1
@@ -105,8 +113,17 @@ VectorXd DynamicFormula2::computetraction(vector<Body*> m_body){
 						//	+ computeHij(x, nx, mid0212, ny)*S0212;
 						////cout << "H" << endl << computeHij(x, nx, y, ny) << endl;
 						//H.block(3 * a, 3 * b, 3, 3) = HS;
+						*/
 					}
 					else{//非对角线
+						int xifen_num2 = 3;
+						double area = trianglearea(p0, p1, p2) / pow(4, xifen_num2);
+						Matrix3d KS1 = digui(p0, p1, p2, xifen_num2, area, 0, x, nx, ny);
+						//cout << "KS1!" << KS1 << endl;
+						coefficient.block(3 * a, 3 * b, 3, 3) = KS1;
+						Matrix3d HS1 = digui(p0, p1, p2, xifen_num2, area, 1, x, nx, ny);
+						H.block(3 * a, 3 * b, 3, 3) = HS1;
+						/*
 						double weight[] = { 0.308641975308642,0.493827160493828,0.308641975308642
 						,0.493827160493828 ,0.308641975308642 ,0.493827160493828
 						,0.308641975308642 ,0.493827160493828 ,0.790123456790124 };
@@ -133,22 +150,23 @@ VectorXd DynamicFormula2::computetraction(vector<Body*> m_body){
 						}
 						cout << "KS1" << KS1 << endl;
 						coefficient.block(3 * a, 3 * b, 3, 3) = KS1;
-						H.block(3 * a, 3 * b, 3, 3) = HS1;
-						//S3
+						H.block(3 * a, 3 * b, 3, 3) = HS1;*/
+						
+				/*		//S3
 						Vector3d mid3 = (p01 + p02 + p12) / 3;
 						double S3 = trianglearea(p01, p02, p12);
 						Matrix3d KS = computeKij(x, nx, mid0, ny)*S0
 							+ computeKij(x, nx, mid1, ny)*S1
 							+ computeKij(x, nx, mid2, ny)*S2
 							+ computeKij(x, nx, mid3, ny)*S3;
-						//coefficient.block(3 * a, 3 * b, 3, 3) = KS;
+						coefficient.block(3 * a, 3 * b, 3, 3) = KS;
 						Matrix3d HS = computeHij(x, nx, mid0, ny)*S0
 							+ computeHij(x, nx, mid1, ny)*S1
 							+ computeHij(x, nx, mid2, ny)*S2
 							+ computeHij(x, nx, mid3, ny)*S3;				
 						cout << "KS" << KS << endl;
 							//cout << "H"<<endl << computeHij(x, nx, y, ny) << endl;
-						//H.block(3 * a, 3 * b, 3, 3) = HS;
+						H.block(3 * a, 3 * b, 3, 3) = HS;*/
 					}				
 				}
 			}
@@ -169,6 +187,7 @@ VectorXd DynamicFormula2::computetraction(vector<Body*> m_body){
 	//		H.block(row * 3, row * 3, 3, 3) = zero - HSum;
 	//	}
 	//}
+
 	for (int i = 0;i < n;i++) {
 		Matrix3d HSum;
 		HSum.setZero();
@@ -176,6 +195,15 @@ VectorXd DynamicFormula2::computetraction(vector<Body*> m_body){
 			HSum += H.block(3 * i, 3 * j, 3, 3);
 		}
 		H.block(3 * i, 3 * i, 3, 3) = zero-HSum;//
+	}
+	//看一下对角线矩阵,前1/3看看
+	cout << "系数矩阵" << endl;
+	for (int i = 0;i < n/3;i++) {
+		cout << coefficient.block(3 * i, 3 * i, 3, 3) << endl;
+	}	
+	cout << "H矩阵" << endl;
+	for (int i = 0;i < n / 3;i++) {
+		cout <<  H.block(3 * i, 3 * i, 3, 3) << endl;
 	}
 	//cout <<"coefficient"<<endl<< coefficient << endl;
 	//解线性方程组
@@ -285,14 +313,19 @@ Matrix3d DynamicFormula2::computef(Vector3d p1, Vector3d p2, Vector3d p3
 	double piany3yita =  (-1 + yipu)*p1(2)/ 4 +  (-1 - yipu) *p2(2) / 4 + p3(2)/ 2;
 	MatrixXd jacobiMatrix(2,3);
 	jacobiMatrix.setZero();
-	jacobiMatrix(0, 0) = piany1yipu;	jacobiMatrix(0, 1) = piany2yipu;	jacobiMatrix(0, 2) = piany3yipu;
-	jacobiMatrix(1, 0) = piany1yita;	jacobiMatrix(1, 1) = piany2yita;	jacobiMatrix(1, 2) = piany3yita;
-	//cout << "H矩阵jacobiMatrix" << endl<<jacobiMatrix << endl;
-	Matrix2d jMatrix = jacobiMatrix*jacobiMatrix.transpose();
-	double jacobi2 = jMatrix.determinant();
-	//Vector3d a(piany1yipu, piany2yipu, piany3yipu);
-	//Vector3d b(piany2yita, piany2yita, piany3yita);
-	double jacobi = sqrt(jacobi2);
+	Vector3d a;
+	Vector3d b;
+	a(0) = piany1yipu;	a(1) = piany2yipu;	a(2) = piany3yipu;
+	b(0) = piany1yita;	b(1) = piany2yita;	b(2) = piany3yita;
+	double jacobi = a.cross(b).norm();
+	//jacobiMatrix(0, 0) = piany1yipu;	jacobiMatrix(0, 1) = piany2yipu;	jacobiMatrix(0, 2) = piany3yipu;
+	//jacobiMatrix(1, 0) = piany1yita;	jacobiMatrix(1, 1) = piany2yita;	jacobiMatrix(1, 2) = piany3yita;
+	////cout << "H矩阵jacobiMatrix" << endl<<jacobiMatrix << endl;
+	//Matrix2d jMatrix = jacobiMatrix*jacobiMatrix.transpose();
+	//double jacobi2 = jMatrix.determinant();
+	////Vector3d a(piany1yipu, piany2yipu, piany3yipu);
+	////Vector3d b(piany2yita, piany2yita, piany3yita);
+	//double jacobi = sqrt(jacobi2);
 	//cout << "jacobi" << jacobi << endl;
 	Vector3d y = chazhi(p1, p2, p3, yipu, yita);
 //	Vector3d ny = chazhi(np1, np2, np3, yipu, yita);
@@ -307,5 +340,60 @@ Matrix3d DynamicFormula2::computef(Vector3d p1, Vector3d p2, Vector3d p3
 	//cout << "f函数值是：" << endl << res << endl;
 	return res;
 }
-
+Matrix3d DynamicFormula2::digui(Vector3d p0, Vector3d p1, Vector3d p2,
+	int n, double area,int flag,Vector3d x,Vector3d nx,Vector3d ny) {//area是单个小三角形的面积
+	if (n == 0) {
+		Vector3d mid = (p0 + p1 + p2) / 3;
+		if (flag == 0) {
+			if (fabs(mid(0) - x(0)) < yipusilon && fabs(mid(1) - x(1)) < yipusilon &&fabs(mid(2) - x(2)) < yipusilon) {
+				Matrix3d zero;
+				zero.setZero();
+				/*cout << "zero" << endl;
+				cout << endl;
+				cout << endl;
+				cout << endl;*/
+				return zero;
+			}
+			else {
+				//Matrix3d temp = area * computeKij(x, nx, mid, ny);
+				/*
+				if (temp(0, 0) > 10000 || temp(0, 1) > 10000 || temp(0, 2) > 10000
+					|| temp(1, 0) > 10000 || temp(1, 1) > 10000 || temp(1, 2) > 10000
+					|| temp(2, 0) > 10000 || temp(2, 1) > 10000 || temp(2, 2) > 10000) {
+					cout << "mid" << mid<< endl<<"x"<<x<<endl;
+					if (mid == x) {
+						cout << "相等" << endl;
+					}
+					else {
+						cout << "不相等" << endl;
+					}						
+				}*/
+				return area * computeKij(x, nx, mid, ny);
+			}
+		}
+		else
+		{
+			if (fabs(mid(0) - x(0)) < yipusilon && fabs(mid(1) - x(1)) < yipusilon &&fabs(mid(2) - x(2)) < yipusilon) {
+				Matrix3d zero;
+				zero.setZero();
+				return zero;
+			}
+			else {
+				return area * computeHij(x, nx, mid, ny);
+			}
+		}
+	}
+	else {
+		Vector3d p01 = (p0 + p1) / 2;
+		Vector3d p02 = (p0 + p2) / 2;
+		Vector3d p12 = (p1 + p2) / 2;		
+		n--;
+		Matrix3d res1 = digui(p0, p01, p02, n, area, flag, x, nx, ny);
+		Matrix3d res2 = digui(p1, p01, p12, n, area, flag, x, nx, ny);
+		Matrix3d res3 = digui(p2, p02, p12, n, area, flag, x, nx, ny);
+		Matrix3d res4 = digui(p01, p12, p02, n, area, flag, x, nx, ny);
+		return res1 + res2 + res3 + res4;
+	}
+	
+}
 
