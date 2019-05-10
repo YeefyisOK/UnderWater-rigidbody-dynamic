@@ -12,7 +12,7 @@ Body::Body(PICnew *m_picnew, Matrix3d R, Vector3d y,double delta_t,Vector3d ve,V
 		onepointST *aonepoint = new onepointST();
 		aonepoint->id=idnum ;//静态变量，只与类有关
 		idnum++;
-		//法向是面法向
+		//法向是面法向,取负是内法向
 		aonepoint->normal = m_picnew->faceandnormal[i].faceNormal;
 		//cout<<i<<"个面的面法向"<< m_picnew->faceandnormal[i].faceNormal;
 		//这个面上三点坐标
