@@ -25,7 +25,7 @@ public:
 	Vector3d computey_();
 	VectorXd computelp();
 	VectorXd computelp_();
-	Matrix3d computeNextR();
+	Matrix3d computeNextR(VectorXd epsl);
 	Vector3d computeNexty(Vector3d y_);
 	VectorXd computeNextlp();
 	VectorXd computeNextwv();

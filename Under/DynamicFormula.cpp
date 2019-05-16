@@ -8,6 +8,7 @@ DynamicFormula::DynamicFormula(Vector3d omega, Vector3d velocity, Matrix3d R,
 	epsilon = temp;
 	this->w = omega;
 	this->v = velocity;
+	this->epsilon = temp;
 	this->R = R; //R如何初始化
 	this->y = y;
 	this->delta_t = delta_t;
@@ -69,7 +70,8 @@ VectorXd DynamicFormula::computelp() {
 	return K * wv;
 }
 VectorXd DynamicFormula::computelp_() {
-	Matrix3d Y = so3_ad(y);
+	Vector3d newy=g.block(0, 3, 3, 1);
+	Matrix3d Y = so3_ad(newy);
 	VectorXd tf = tsfs2tf(Y);
 	Vector3d l = vec62Vec31(lp);
 	Vector3d p = vec62Vec32(lp);
@@ -190,7 +192,7 @@ Matrix3d DynamicFormula::s_GetRotaionMatrix(double angle, const Vector3d &axis)
 	matrix(2,2) = tz * z + c;
 	return matrix;
 }
-Matrix3d DynamicFormula::computeNextR() {
+Matrix3d DynamicFormula::computeNextR(VectorXd epsl) {
 	/*
 	Matrix3d daomega = toDaOmegaOrY(w);
 	daomega(0, 0) = daomega(0, 0) * delta_t+1;
@@ -247,7 +249,7 @@ Matrix3d DynamicFormula::computeNextR() {
 	q = q_w * q;
 	q.normalize();
 	return q.toRotationMatrix();*/
-	Vector3d Rw = R *w;// 
+	Vector3d Rw = R * epsl.block(0,0,3,1);// 
 	//double length = 1;sqrt(Rw(0)*Rw(0) + Rw(1)*Rw(1) + Rw(2)*Rw(2))
 	Quaterniond q_w(0, Rw(0)* delta_t, Rw(1)*delta_t, Rw(2)* delta_t);
 	q_w = q_w * q;
@@ -265,19 +267,19 @@ Matrix3d DynamicFormula::computeNextR() {
 }
 float* DynamicFormula::GetRotAndTransData() {
 	static float data[16];//!!!!
-	data[0] = R(0,0);
-	data[1] = R(1,0);
-	data[2] = R(2,0);
+	data[0] = g(0,0);
+	data[1] = g(1,0);
+	data[2] = g(2,0);
 	data[3] = 0;
 
-	data[4] = R(0,1);
-	data[5] = R(1,1);
-	data[6] = R(2,1);
+	data[4] = g(0,1);
+	data[5] = g(1,1);
+	data[6] = g(2,1);
 	data[7] = 0;
 
-	data[8] = R(0,2);
-	data[9] = R(1,2);
-	data[10] = R(2,2);
+	data[8] = g(0,2);
+	data[9] = g(1,2);
+	data[10] = g(2,2);
 	data[11] = 0;
 
 	data[12] = 0;
@@ -385,66 +387,157 @@ VectorXd DynamicFormula::Unconstr_Dyn(VectorXd epsilon_now, VectorXd epsilon_las
 	Vector3d w = epsilon_now.block(0, 0, 3, 1);
 	Vector3d v = epsilon_now.block(3, 0, 3, 1);
 	Jacobian(0, 0) = K(0, 0) + delta_t * 0.5*w(2)*K(1, 0) - delta_t * 0.5*w(1)*K(2, 0);
-	Jacobian(0, 1) = K(0, 1) + delta_t * 0.5*w(2)*K(1, 1) - delta_t * 0.5*w(1)*K(2, 1);
-	Jacobian(0, 2) = K(0, 2) + delta_t * 0.5*w(2)*K(1, 2) - delta_t * 0.5*w(1)*K(2, 2);
-	Jacobian(0, 3) = K(0, 3) + delta_t * 0.5*w(2)*K(1, 3) - delta_t * 0.5*w(1)*K(2, 3);
-	Jacobian(0, 4) = K(0, 4) + delta_t * 0.5*w(2)*K(1, 4) - delta_t * 0.5*w(1)*K(2, 4);
-	Jacobian(0, 5) = K(0, 5) + delta_t * 0.5*w(2)*K(1, 5) - delta_t * 0.5*w(1)*K(2, 5);
+	Jacobian(0, 1) = -delta_t * 0.5*w(0)*K(2, 0) - delta_t * 0.5*w(2)*K(2, 2) //第一行第三行对w（1）求导
+		- delta_t * 0.5*K(2, 1)*w(1)+//前导后不导
+		K(0, 1) + delta_t * 0.5*w(2)*K(1, 1) - delta_t * 0.5*w(1)*K(2, 1);//前不导后导
+	Jacobian(0, 2) = delta_t * 0.5*w(0)*K(1, 0)+ delta_t * 0.5*w(1)*K(1, 1)//第一行第二行对w（2）求导
+		+ delta_t * 0.5*K(1, 2)*w(2) +//前导后不导
+		K(0, 2) + delta_t * 0.5*w(2)*K(1, 2) - delta_t * 0.5*w(1)*K(2, 2);//前不导后导
+	Jacobian(0, 3) = 0;
+	Jacobian(0, 4) = 0;
+	Jacobian(0, 5) = 0;
 
-	Jacobian(1, 0) = -delta_t * 0.5*w(2)*K(0, 0) + K(1, 0) + delta_t * 0.5*w(0)*K(2, 0);
+	Jacobian(1, 0) = delta_t * 0.5*K(2, 0)*w(0) //前导后不导
+		-delta_t * 0.5*w(2)*K(0, 0) + K(1, 0) + delta_t * 0.5*w(0)*K(2, 0)//前不导后导
+		+0.5*delta_t*K(2,1)*w(1)+0.5*delta_t*K(2, 2)*w(1);//第二行第三行对w（0）求导
 	Jacobian(1, 1) = -delta_t * 0.5*w(2)*K(0, 1) + K(1, 1) + delta_t * 0.5*w(0)*K(2, 1);
-	Jacobian(1, 2) = -delta_t * 0.5*w(2)*K(0, 2) + K(1, 2) + delta_t * 0.5*w(0)*K(2, 2);
-	Jacobian(1, 3) = -delta_t * 0.5*w(2)*K(0, 3) + K(1, 3) + delta_t * 0.5*w(0)*K(2, 3);
-	Jacobian(1, 4) = -delta_t * 0.5*w(2)*K(0, 4) + K(1, 4) + delta_t * 0.5*w(0)*K(2, 4);
-	Jacobian(1, 5) = -delta_t * 0.5*w(2)*K(0, 5) + K(1, 5) + delta_t * 0.5*w(0)*K(2, 5);
+	Jacobian(1, 2) = -delta_t * 0.5* K(0,2) *w(2)  //前导后不导
+		-delta_t * 0.5*w(2)*K(0, 2) + K(1, 2) + delta_t * 0.5*w(0)*K(2, 2)//前不导后导
+		-delta_t * 0.5*w(0)*K(0, 0)-delta_t * 0.5*w(1)*K(0, 1);//第1行第二行对w（2）求导
+	Jacobian(1, 3) = 0;
+	Jacobian(1, 4) = 0;
+	Jacobian(1, 5) = 0;
 
-	Jacobian(2, 0) = delta_t * 0.5*w(1)*K(0, 0) - delta_t * 0.5*w(0)*K(1, 0) + K(2, 0);
-	Jacobian(2, 1) = delta_t * 0.5*w(1)*K(0, 1) - delta_t * 0.5*w(0)*K(1, 1) + K(2, 1);
+	Jacobian(2, 0) = -delta_t * 0.5*K(1, 0)*w(0)//前导后不导
+		+delta_t * 0.5*w(1)*K(0, 0) - delta_t * 0.5*w(0)*K(1, 0) + K(2, 0) //前不导后导
+		- delta_t * 0.5*w(1)*K(1, 1) - delta_t * 0.5*w(2)*K(1, 2);//后两行对w（0）
+	Jacobian(2, 1) = delta_t * 0.5*K(0, 1)*w(1)//前导后不到
+		+ delta_t * 0.5*w(1)*K(0, 1) - delta_t * 0.5*w(0)*K(1, 1) + K(2, 1)//前不导后导
+		+ delta_t * 0.5*K(0, 0)*w(0)+ delta_t * 0.5*K(0, 2)*w(2);//一三行对w(1)
 	Jacobian(2, 2) = delta_t * 0.5*w(1)*K(0, 2) - delta_t * 0.5*w(0)*K(1, 2) + K(2, 2);
-	Jacobian(2, 3) = delta_t * 0.5*w(1)*K(0, 3) - delta_t * 0.5*w(0)*K(1, 3) + K(2, 3);
-	Jacobian(2, 4) = delta_t * 0.5*w(1)*K(0, 4) - delta_t * 0.5*w(0)*K(1, 4) + K(2, 4);
-	Jacobian(2, 5) = delta_t * 0.5*w(1)*K(0, 5) - delta_t * 0.5*w(0)*K(1, 5) + K(2, 5);
+	Jacobian(2, 3) = 0;
+	Jacobian(2, 4) = 0;
+	Jacobian(2, 5) = 0;
 
 	Jacobian(3, 0) = delta_t * 0.5*v(2)*K(1, 0) - delta_t * 0.5*v(1)*K(2, 0) + K(3, 0) +
 		delta_t * 0.5*w(2)*K(4, 0) - delta_t * 0.5*w(1)*K(5, 0);
-	Jacobian(3, 1) = delta_t * 0.5*v(2)*K(1, 1) - delta_t * 0.5*v(1)*K(2, 1) + K(3, 1) +
-		delta_t * 0.5*w(2)*K(4, 1) - delta_t * 0.5*w(1)*K(5, 1);
-	Jacobian(3, 2) = delta_t * 0.5*v(2)*K(1, 2) - delta_t * 0.5*v(1)*K(2, 2) + K(3, 2) +
-		delta_t * 0.5*w(2)*K(4, 2) - delta_t * 0.5*w(1)*K(5, 2);
-	Jacobian(3, 3) = delta_t * 0.5*v(2)*K(1, 3) - delta_t * 0.5*v(1)*K(2, 3) + K(3, 3) +
-		delta_t * 0.5*w(2)*K(4, 3) - delta_t * 0.5*w(1)*K(5, 3);
-	Jacobian(3, 4) = delta_t * 0.5*v(2)*K(1, 4) - delta_t * 0.5*v(1)*K(2, 4) + K(3, 4) +
-		delta_t * 0.5*w(2)*K(4, 4) - delta_t * 0.5*w(1)*K(5, 4);
-	Jacobian(3, 5) = delta_t * 0.5*v(2)*K(1, 5) - delta_t * 0.5*v(1)*K(2, 5) + K(3, 5) +
-		delta_t * 0.5*w(2)*K(4, 5) - delta_t * 0.5*w(1)*K(5, 5);
+	Jacobian(3, 1) = -delta_t * 0.5*w(0)*K(5, 0) - delta_t * 0.5*w(2)*K(5, 2)
+		- delta_t * 0.5*v(0)*K(5, 3) - delta_t * 0.5*v(1)*K(5, 4) - delta_t * 0.5*v(2)*K(5, 5)
+		//0，2，3，4，5对w(1)求导
+		+delta_t * 0.5*v(2)*K(1, 1) - delta_t * 0.5*v(1)*K(2, 1) + K(3, 1) +
+		delta_t * 0.5*w(2)*K(4, 1) - delta_t * 0.5*w(1)*K(5, 1);//前不导后导
+		//前导后不导没有w（1）
+	Jacobian(3, 2) = delta_t * 0.5*w(0)*K(4, 0)+ delta_t * 0.5*w(1)*K(4, 1)
+		+ delta_t * 0.5*v(0)*K(4, 3) + delta_t * 0.5*v(1)*K(4, 4) + delta_t * 0.5*v(2)*K(4, 5)
+		//0，1，3，4，5对w(2)求导
+		+delta_t * 0.5*v(2)*K(1, 2) - delta_t * 0.5*v(1)*K(2, 2) + K(3, 2) +
+		delta_t * 0.5*w(2)*K(4, 2) - delta_t * 0.5*w(1)*K(5, 2)//前不导后导
+		+ delta_t * 0.5*K(4, 2)*w(2)
+		;//前导后不导
+	Jacobian(3, 3) = 
+		//0，1，2，4，5对v(0)求导为0
+		+delta_t * 0.5*v(2)*K(1, 3) - delta_t * 0.5*v(1)*K(2, 3) + K(3, 3) +
+		delta_t * 0.5*w(2)*K(4, 3) - delta_t * 0.5*w(1)*K(5, 3);//前不导后导
+	//前导后不导没有v(0
+	Jacobian(3, 4) = -delta_t * 0.5*K(2, 0)*w(0) - delta_t * 0.5*K(2, 1)*w(1)
+		- delta_t * 0.5*K(2, 2)*w(2) - delta_t * 0.5*K(2, 3)*v(0) - delta_t * 0.5*K(2, 5)*v(2)
+		//0，1，2，3，5对v(1)求导
+		+ delta_t * 0.5*v(2)*K(1, 4) - delta_t * 0.5*v(1)*K(2, 4) + K(3, 4) +
+		delta_t * 0.5*w(2)*K(4, 4) - delta_t * 0.5*w(1)*K(5, 4)//前不导后导
+		- delta_t * 0.5*K(2, 4)*v(1);
+	//前导后不导
+	Jacobian(3, 5) = delta_t * 0.5*K(1, 0)*w(0)+ delta_t * 0.5*K(1, 1)*w(1)
+		+ delta_t * 0.5*K(1, 2)*w(2) + delta_t * 0.5*K(1, 3)*v(0) + delta_t * 0.5*K(1, 4)*v(1)
+		//0，1，2，3，4对v(2)求导
+		+delta_t * 0.5*v(2)*K(1, 5) - delta_t * 0.5*v(1)*K(2, 5) + K(3, 5) +
+		delta_t * 0.5*w(2)*K(4, 5) - delta_t * 0.5*w(1)*K(5, 5)//前不导后导
+		+delta_t * 0.5*K(1, 5)*v(2);
+	//前导后不导
 
-	Jacobian(4, 0) = -delta_t * 0.5*v(2)*K(0, 0) + delta_t * 0.5*v(0)*K(2, 0) -
-		delta_t * 0.5*w(2)*K(3, 0) + K(4, 0) + delta_t * 0.5*w(0)*K(5, 0);
-	Jacobian(4, 1) = -delta_t * 0.5*v(2)*K(0, 1) + delta_t * 0.5*v(0)*K(2, 1) -
-		delta_t * 0.5*w(2)*K(3, 1) + K(4, 1) + delta_t * 0.5*w(0)*K(5, 1);
-	Jacobian(4, 2) = -delta_t * 0.5*v(2)*K(0, 2) + delta_t * 0.5*v(0)*K(2, 2) -
-		delta_t * 0.5*w(2)*K(3, 2) + K(4, 2) + delta_t * 0.5*w(0)*K(5, 2);
-	Jacobian(4, 3) = -delta_t * 0.5*v(2)*K(0, 3) + delta_t * 0.5*v(0)*K(2, 3) -
-		delta_t * 0.5*w(2)*K(3, 3) + K(4, 3) + delta_t * 0.5*w(0)*K(5, 3);
-	Jacobian(4, 4) = -delta_t * 0.5*v(2)*K(0, 4) + delta_t * 0.5*v(0)*K(2, 4) -
-		delta_t * 0.5*w(2)*K(3, 4) + K(4, 4) + delta_t * 0.5*w(0)*K(5, 4);
-	Jacobian(4, 5) = -delta_t * 0.5*v(2)*K(0, 5) + delta_t * 0.5*v(0)*K(2, 5) -
-		delta_t * 0.5*w(2)*K(3, 5) + K(4, 5) + delta_t * 0.5*w(0)*K(5, 5);
+	Jacobian(4, 0) = delta_t * 0.5*K(5, 1)*w(1) + delta_t * 0.5*K(5, 2)*w(2)
+		+ delta_t * 0.5*K(5, 3)*v(0) + delta_t * 0.5*K(5, 4)*v(1) + delta_t * 0.5*K(5, 5)*v(2)
+		//1，2，3，4，5对w(0)求导
+		- delta_t * 0.5*v(2)*K(0, 0) + delta_t * 0.5*v(0)*K(2, 0) -
+		delta_t * 0.5*w(2)*K(3, 0) + K(4, 0) + delta_t * 0.5*w(0)*K(5, 0)//前不导后导
+		+ delta_t * 0.5*K(5, 5)*w(0);
+		//前导后不导
+	Jacobian(4, 1) = 
+		//0，2，3，4，5对w(1)求导为0
+		-delta_t * 0.5*v(2)*K(0, 1) + delta_t * 0.5*v(0)*K(2, 1) -
+		delta_t * 0.5*w(2)*K(3, 1) + K(4, 1) + delta_t * 0.5*w(0)*K(5, 1);//前不导后导
+		//前导后不导求导为0
+	Jacobian(4, 2) = -delta_t * 0.5*K(3, 0)*w(0) - delta_t * 0.5*K(3, 1)*w(1)
+		- delta_t * 0.5*K(3, 3)*v(0) - delta_t * 0.5*K(3, 4)*v(1) - delta_t * 0.5*K(3, 5)*v(2)
+		//0，1，3，4，5对w(2)求导
+		- delta_t * 0.5*v(2)*K(0, 2) + delta_t * 0.5*v(0)*K(2, 2) -
+		delta_t * 0.5*w(2)*K(3, 2) + K(4, 2) + delta_t * 0.5*w(0)*K(5, 2)//前不导后导
+		- delta_t * 0.5*K(3, 2)*w(0);
+		//前导后不导
+	Jacobian(4, 3) = delta_t * 0.5*K(2,0)*w(0)+ delta_t * 0.5*K(2, 1)*w(1)
+		+ delta_t * 0.5*K(2, 2)*w(2) + delta_t * 0.5*K(2, 4)*v(1) + delta_t * 0.5*K(2, 5)*v(2)
+		//0，1，2，4，5对v(0)求导
+		-delta_t * 0.5*v(2)*K(0, 3) + delta_t * 0.5*v(0)*K(2, 3) -
+		delta_t * 0.5*w(2)*K(3, 3) + K(4, 3) + delta_t * 0.5*w(0)*K(5, 3)//前不导后导
+		+delta_t * 0.5*K(2, 3)*v(0);
+	//前导后不导
+	Jacobian(4, 4) =
+		//0，1，2，3，5对v(1)求导为0
+		-delta_t * 0.5*v(2)*K(0, 4) + delta_t * 0.5*v(0)*K(2, 4) -
+		delta_t * 0.5*w(2)*K(3, 4) + K(4, 4) + delta_t * 0.5*w(0)*K(5, 4)//前不导后导
+		;
+	////前导后不导为0
+	Jacobian(4, 5) = -delta_t * 0.5*K(0, 0)*w(0) - delta_t * 0.5*K(0, 0)*w(1)
+		- delta_t * 0.5*K(0, 0)*w(2) - delta_t * 0.5*K(0, 0)*v(0) - delta_t * 0.5*K(0, 0)*v(1)
+		//0，1，2，3，4对v(2)求导
+		- delta_t * 0.5*v(2)*K(0, 5) + delta_t * 0.5*v(0)*K(2, 5) -
+		delta_t * 0.5*w(2)*K(3, 5) + K(4, 5) + delta_t * 0.5*w(0)*K(5, 5)//前不导后导
+		- delta_t * 0.5*K(0, 5)*v(2);
+	//前导后不导
 
-	Jacobian(5, 0) = delta_t * 0.5*v(1)*K(0, 0) - delta_t * 0.5*v(0)*K(1, 0) +
-		delta_t * 0.5*w(1)*K(3, 0) - delta_t * 0.5*w(0)*K(4, 0) + K(5, 0);
-	Jacobian(5, 1) = delta_t * 0.5*v(1)*K(0, 1) - delta_t * 0.5*v(0)*K(1, 1) +
-		delta_t * 0.5*w(1)*K(3, 1) - delta_t * 0.5*w(0)*K(4, 1) + K(5, 1);
-	Jacobian(5, 2) = delta_t * 0.5*v(1)*K(0, 2) - delta_t * 0.5*v(0)*K(1, 2) +
-		delta_t * 0.5*w(1)*K(3, 2) - delta_t * 0.5*w(0)*K(4, 2) + K(5, 2);
-	Jacobian(5, 3) = delta_t * 0.5*v(1)*K(0, 3) - delta_t * 0.5*v(0)*K(1, 3) +
-		delta_t * 0.5*w(1)*K(3, 3) - delta_t * 0.5*w(0)*K(4, 3) + K(5, 3);
-	Jacobian(5, 4) = delta_t * 0.5*v(1)*K(0, 4) - delta_t * 0.5*v(0)*K(1, 4) +
-		delta_t * 0.5*w(1)*K(3, 4) - delta_t * 0.5*w(0)*K(4, 4) + K(5, 4);
-	Jacobian(5, 5) = delta_t * 0.5*v(1)*K(0, 5) - delta_t * 0.5*v(0)*K(1, 5) +
-		delta_t * 0.5*w(1)*K(3, 5) - delta_t * 0.5*w(0)*K(4, 5) + K(5, 5);
+	Jacobian(5, 0) = -delta_t * 0.5*K(4, 1)*w(1) - delta_t * 0.5*K(4, 2)*w(2)
+		- delta_t * 0.5*K(4, 3)*v(0) - delta_t * 0.5*K(4, 4)*v(1) - delta_t * 0.5*K(4, 5)*v(2)
+		//1，2，3，4 ,5对w(0)求导
+		+ delta_t * 0.5*v(1)*K(0, 0) - delta_t * 0.5*v(0)*K(1, 0) +
+		delta_t * 0.5*w(1)*K(3, 0) - delta_t * 0.5*w(0)*K(4, 0) + K(5, 0)//前不导后导
+		- delta_t * 0.5*K(4, 0)*w(0);
+		//前导后不到
+
+	Jacobian(5, 1) = delta_t * 0.5*w(1)*K(3, 0)*w(0) + delta_t * 0.5*w(1)*K(3, 2)*w(2)
+		+ delta_t * 0.5*w(1)*K(3, 3)*v(0) + delta_t * 0.5*w(1)*K(3, 4)*v(1) + delta_t * 0.5*w(1)*K(3, 5)*v(2)
+		//0，2，3，4 ,5行对w(1)求导
+		+ delta_t * 0.5*v(1)*K(0, 1) - delta_t * 0.5*v(0)*K(1, 1) +
+		delta_t * 0.5*w(1)*K(3, 1) - delta_t * 0.5*w(0)*K(4, 1) + K(5, 1)//前不导后导
+		+ delta_t * 0.5*w(1)*K(3, 1)*w(1);
+	//前导后不导
+
+	Jacobian(5, 2) =
+		//0，1，3，4 ,5行对w(2)求导为0
+		delta_t * 0.5*v(1)*K(0, 2) - delta_t * 0.5*v(0)*K(1, 2) +
+		delta_t * 0.5*w(1)*K(3, 2) - delta_t * 0.5*w(0)*K(4, 2) + K(5, 2);//前不导后导
+	//前导后不导为0
+	Jacobian(5, 3) = -delta_t * 0.5*K(1, 0)*w(0) - delta_t * 0.5*K(1, 1)*w(1)
+		- delta_t * 0.5*K(1, 2)*w(2) - delta_t * 0.5*K(1, 4)*v(1) - delta_t * 0.5*K(1,5)*v(2)
+		//0，1，2，4 ,5行对v(0)求导为0
+		+delta_t * 0.5*v(1)*K(0, 3) - delta_t * 0.5*v(0)*K(1, 3) +
+		delta_t * 0.5*w(1)*K(3, 3) - delta_t * 0.5*w(0)*K(4, 3) + K(5, 3)//前不导后导
+	-delta_t * 0.5*K(1, 3)*v(0);
+	//前导后不导
+	Jacobian(5, 4) = delta_t * 0.5*K(0, 0)*w(0)+ delta_t * 0.5*K(0, 1)*w(1) 
+		+ delta_t * 0.5*K(0, 2)*w(2) + delta_t * 0.5*K(0, 3)*v(0) + delta_t * 0.5*K(0, 4)*v(2)
+		//0，1，2，3 ,5行对v(1)求导
+		+delta_t * 0.5*v(1)*K(0, 4) - delta_t * 0.5*v(0)*K(1, 4) +
+		delta_t * 0.5*w(1)*K(3, 4) - delta_t * 0.5*w(0)*K(4, 4) + K(5, 4);//前不导后导
+		delta_t * 0.5*K(0, 4)*v(1);
+	//前导后不导
+	Jacobian(5, 5) = //0，1，2，3 ,4行对v(2)求导为0
+		delta_t * 0.5*v(1)*K(0, 5) - delta_t * 0.5*v(0)*K(1, 5) +
+		delta_t * 0.5*w(1)*K(3, 5) - delta_t * 0.5*w(0)*K(4, 5) + K(5, 5);//前不导后导
+	//前导后不导为0
 	VectorXd delta_epsilion=Jacobian.inverse() * fepsilonk_est;
 	//cout << "delta_epsilion是是是=" << delta_epsilion << endl;
+	/*VectorXd res(12);
+	res.block(0, 0, 6, 1) = epsilon_now - delta_epsilion;
+	res.block(6, 0, 6, 1) = epsilon_now;*/
 	return epsilon_now - delta_epsilion;
 }
 MatrixXd DynamicFormula::se3_Ctln(VectorXd tempepsilon) {
@@ -468,16 +561,21 @@ void DynamicFormula::nextTime() {
 	Matrix3d Y = so3_ad(tempy);
 	VectorXd tf = tsfs2tf(Y);
 	VectorXd epsilon_last = epsilon;
+	//初始步骤
 	VectorXd delta_epsilon = delta_t * K.inverse()*(se3_ad(delta_t*epsilon_last)*K*epsilon_last + tf);
+	//VectorXd delta_epsilon = delta_t * K.inverse()*(computelp_());
 	VectorXd epsilon_now = epsilon_last + delta_epsilon;
-	//cout << "epsilon_now 预估" << epsilon_now << endl;
+	cout << "epsilon_now 预估" << epsilon_now << endl;
 	VectorXd res = se3_DEP(epsilon_now, epsilon_last, g);
 	//cout << "偏差res=" << res << endl;
 	//牛顿迭代法求解方程组
 	int i = 0;
-	double cancha =1e-14;
+	double cancha =1e-13;
 	do{//设置残差值
-		epsilon_now=Unconstr_Dyn(epsilon_now, epsilon_last, g);
+		//epsilon_last是k-1,now是k
+		//执行后now是k+1,
+		epsilon_now =Unconstr_Dyn(epsilon_now, epsilon_last, g);
+		
 		//cout << "epsilon_now 迭代后的值" << epsilon_now << endl;
 		res = se3_DEP(epsilon_now, epsilon_last, g);
 		//cout << "偏差res=" << res << endl;
@@ -486,14 +584,16 @@ void DynamicFormula::nextTime() {
 		res(3) > cancha || res(4) > cancha || res(5) > cancha ||
 		res(0) < -cancha || res(1) < -cancha || res(2) < -cancha ||
 		res(3) < -cancha || res(4) < -cancha || res(5) < -cancha
-		) && i < 50);
-	//cout << "迭代了多少次？" << i << endl;
-	//cout << "偏差res=" << res << endl;
+		) && i < 400);
+	cout << "迭代了多少次？" << i << endl;
+	cout << "偏差res=" << res << endl;	
 	Matrix4d se3cay= se3_cay(delta_t * epsilon_now);
 	//cout << "se3cay==" << se3cay << endl;
 	g= g * se3cay;
 	//cout << "g" << g << endl;
-	R = g.block(0, 0, 3, 3);
+	//重新计算R，然后赋值给g
+	//R = computeNextR(epsilon_now);
+	//g.block(0, 0, 3, 3)=R;
 	y = g.block(0, 3, 3, 1);
 	epsilon = epsilon_now;
 	cout << "角速度和速度是" << epsilon << endl;

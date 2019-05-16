@@ -434,16 +434,16 @@ MatrixXd CKirchhoff::computeK(){
 	KF(5, 5) = 1.8585;
 	cout << "KB:" << KB << endl;*/
 	//KB.setIdentity();
-	MatrixXd Kirchhoff = KB + KF;//
+	MatrixXd Kirchhoff = KB;//+KF
 	cout << "KB:" << KB << endl;
-	cout << "Kirchhoff:" << 0.5*Kirchhoff << endl;
-	return 0.5*Kirchhoff;
+	cout << "Kirchhoff:" << Kirchhoff << endl;
+	return Kirchhoff;
 }
 VectorXd CKirchhoff::computetsfs() {
 	VectorXd tsfs(6);
 	Vector3d g(0, -9.8, 0);
 	Vector3d tg(0, 0, 0);//质量均匀分布
-	Vector3d fg = (bodyMass - volume*fluidDensity)*g;
+	Vector3d fg(0, 0, 0);// =(bodyMass - volume*fluidDensity)*g;//
 	tsfs.block(0, 0, 3, 1) = tg;
 	tsfs.block(3, 0, 3, 1) = fg;
 	return tsfs;

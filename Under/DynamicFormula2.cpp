@@ -58,14 +58,15 @@ VectorXd DynamicFormula2::computetraction(vector<Body*> m_body){
 					int a = m_body[i]->v_onepoint[j].id;//下标符号
 					Vector3d nx = R*m_body[i]->v_onepoint[j].normal;//得到x的法向
 					if (a==b) {//对角线
-						for (int xifen_num = 3;xifen_num < 16;xifen_num++) {
+						for (int xifen_num = 3;xifen_num < 7;xifen_num++) {
 							//cout << "sanjiaoxing area" << trianglearea(p0, p1, p2) << endl;
 							double area = trianglearea(p0, p1, p2) / pow(4, xifen_num);
-							//Matrix3d KS1 = digui(p0, p1, p2, xifen_num, area, 0, x, nx, ny);
+							Matrix3d KS1 = digui(p0, p1, p2, xifen_num, area, 0, x, nx, ny);
 							//coefficient.block(3 * a, 3 * b, 3, 3) = KS1 - 0.5*identity;	
-							//cout << "细分的K矩阵" << KS1 <<endl;
-							Matrix3d HS1 = digui(p0, p1, p2, xifen_num, area, 1, x, nx, ny);
-							cout << xifen_num << "对角" << HS1 << endl;
+
+							cout << xifen_num << "细分的K矩阵a:" <<a<<"b:"<<b<<":"<< KS1 <<endl;
+						//	Matrix3d HS1 = digui(p0, p1, p2, xifen_num, area, 1, x, nx, ny);
+						//	cout << xifen_num << "对角" << HS1 << endl;
 						}
 						//H.block(3 * a, 3 * b, 3, 3) = HS1;
 						/*
