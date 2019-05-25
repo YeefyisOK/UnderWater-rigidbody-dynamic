@@ -12,6 +12,7 @@ DynamicFormula::DynamicFormula(Vector3d omega, Vector3d velocity, Matrix3d R,
 	this->R = R; //R如何初始化
 	this->y = y;
 	this->delta_t = delta_t;
+	//this-> lp = computelp();//一开始给出lp
 	g.block(0, 0, 3, 3) = R;
 	g.block(0, 3, 3, 1) = y;
 	g(3, 0) = 0;
@@ -34,6 +35,17 @@ Matrix3d DynamicFormula::so3_ad(Vector3d omega) {
 	res(2, 0) = -omega(1);
 	res(2, 1) = omega(0);
 	res(2, 2) = 0;
+	return res;
+}
+VectorXd DynamicFormula::computetgfg() {
+	Vector3d gra_acc(0, -9.8, 0);//重力加速度g
+	Vector3d temp = (fluidMass - bodyMass)*Cm;
+	Matrix3d tempchacheng = so3_ad(temp);
+	Vector3d tg = tempchacheng * g.block(0, 0, 3, 3).transpose()*gra_acc;
+	Vector3d fg = (fluidMass - bodyMass)*g.block(0, 0, 3, 3).transpose()*gra_acc;
+	VectorXd res(6);
+	res.block(0, 0, 3, 1) = tg;
+	res.block(0, 3, 3, 1) = fg;
 	return res;
 }
 VectorXd DynamicFormula::tsfs2tf( Matrix3d Y) {
@@ -72,7 +84,7 @@ VectorXd DynamicFormula::computelp() {
 VectorXd DynamicFormula::computelp_() {
 	Vector3d newy=g.block(0, 3, 3, 1);
 	Matrix3d Y = so3_ad(newy);
-	VectorXd tf = tsfs2tf(Y);
+	VectorXd tf = computetgfg(); //tsfs2tf(Y);
 	Vector3d l = vec62Vec31(lp);
 	Vector3d p = vec62Vec32(lp);
 	Vector3d a = l.cross(w) + p.cross(v);
@@ -192,7 +204,7 @@ Matrix3d DynamicFormula::s_GetRotaionMatrix(double angle, const Vector3d &axis)
 	matrix(2,2) = tz * z + c;
 	return matrix;
 }
-Matrix3d DynamicFormula::computeNextR(VectorXd epsl) {
+Matrix3d DynamicFormula::computeNextR() {//VectorXd epsl
 	/*
 	Matrix3d daomega = toDaOmegaOrY(w);
 	daomega(0, 0) = daomega(0, 0) * delta_t+1;
@@ -249,7 +261,7 @@ Matrix3d DynamicFormula::computeNextR(VectorXd epsl) {
 	q = q_w * q;
 	q.normalize();
 	return q.toRotationMatrix();*/
-	Vector3d Rw = R * epsl.block(0,0,3,1);// 
+	Vector3d Rw = R *w;// 
 	//double length = 1;sqrt(Rw(0)*Rw(0) + Rw(1)*Rw(1) + Rw(2)*Rw(2))
 	Quaterniond q_w(0, Rw(0)* delta_t, Rw(1)*delta_t, Rw(2)* delta_t);
 	q_w = q_w * q;
@@ -257,7 +269,7 @@ Matrix3d DynamicFormula::computeNextR(VectorXd epsl) {
 	q_w.x() = q_w.x()*0.5;
 	q_w.y() = q_w.y()*0.5;
 	q_w.z() = q_w.z()*0.5;
-	cout << "q_w:" << q_w.coeffs() << endl;//计算经过旋转后的orientation 
+	//cout << "q_w:" << q_w.coeffs() << endl;//计算经过旋转后的orientation 
 	q.w() = q_w.w() + q.w();
 	q.x() = q_w.x() + q.x();
 	q.y() = q_w.y() + q.y();
@@ -267,6 +279,27 @@ Matrix3d DynamicFormula::computeNextR(VectorXd epsl) {
 }
 float* DynamicFormula::GetRotAndTransData() {
 	static float data[16];//!!!!
+	
+	data[0] = R(0, 0);
+	data[1] = R(1, 0);
+	data[2] = R(2, 0);
+	data[3] = 0;
+
+	data[4] = R(0, 1);
+	data[5] = R(1, 1);
+	data[6] = R(2, 1);
+	data[7] = 0;
+
+	data[8] = R(0, 2);
+	data[9] = R(1, 2);
+	data[10] = R(2, 2);
+	data[11] = 0;
+
+	data[12] = 0;
+	data[13] = 0;
+	data[14] = 0;
+	data[15] = 1;
+	/*
 	data[0] = g(0,0);
 	data[1] = g(1,0);
 	data[2] = g(2,0);
@@ -285,7 +318,7 @@ float* DynamicFormula::GetRotAndTransData() {
 	data[12] = 0;
 	data[13] = 0;
 	data[14] = 0;
-	data[15] = 1;
+	data[15] = 1;*/
 	return data;
 }
 Vector3d DynamicFormula::computeNexty( Vector3d y_) {
@@ -293,6 +326,11 @@ Vector3d DynamicFormula::computeNexty( Vector3d y_) {
 //	cout << "temp_deltay" << temp_deltay << endl;
 //	cout << "(" << y(0) << "," << y(1) << "," << y(2) << ")" << endl;
 	return y + temp_deltay;
+}
+
+VectorXd DynamicFormula::computeNextlsps(VectorXd lsps) {
+	VectorXd ls_ps_ = tsfs;
+	return lsps + ls_ps_ * delta_t;
 }
 VectorXd DynamicFormula::computeNextlp() {
 	/*
@@ -317,7 +355,7 @@ VectorXd DynamicFormula::computeNextlp() {
 }
 VectorXd DynamicFormula::computeNextwv() {
 	MatrixXd Kinv = K.inverse();
-	cout << "Kinv" << Kinv << endl;
+	//cout << "Kinv" << Kinv << endl;
 	VectorXd res=Kinv * lp;
 	//w = res.block(0, 0, 3, 1);
 	//v = res.block(3, 0, 3, 1);
@@ -374,9 +412,16 @@ MatrixXd DynamicFormula::se3_ad(VectorXd tempepsilon) {
 VectorXd DynamicFormula::se3_DEP(VectorXd epsilon_now, VectorXd epsilon_last, Matrix4d &gk) {
 	Vector3d tempy = gk.block(0, 3, 3, 1);			
 	Matrix3d Y = so3_ad(tempy);
-	VectorXd tf = tsfs2tf(Y);
+	VectorXd tf = computetgfg();
+		// tsfs2tf(Y);
 	MatrixXd ctln1 = se3_Ctln(delta_t * epsilon_now);
 	MatrixXd ctln2 = se3_Ctln(-delta_t * epsilon_last);
+	Vector3d tempR = gk.block(0, 0, 3, 3);
+
+	/*VectorXd tf(6);
+	tf.block(0, 0, 3, 1) = tempR.transpose()*tsfs.block(0, 0, 3, 1);
+	tf.block(0, 3, 3, 1) = tempR.transpose()*tsfs.block(0, 3, 3, 1);*/
+
 	return ctln1*K*epsilon_now -
 		ctln2*K*epsilon_last- delta_t* tf ;//
 }
@@ -424,9 +469,10 @@ VectorXd DynamicFormula::Unconstr_Dyn(VectorXd epsilon_now, VectorXd epsilon_las
 	Jacobian(3, 1) = -delta_t * 0.5*w(0)*K(5, 0) - delta_t * 0.5*w(2)*K(5, 2)
 		- delta_t * 0.5*v(0)*K(5, 3) - delta_t * 0.5*v(1)*K(5, 4) - delta_t * 0.5*v(2)*K(5, 5)
 		//0，2，3，4，5对w(1)求导
-		+delta_t * 0.5*v(2)*K(1, 1) - delta_t * 0.5*v(1)*K(2, 1) + K(3, 1) +
-		delta_t * 0.5*w(2)*K(4, 1) - delta_t * 0.5*w(1)*K(5, 1);//前不导后导
-		//前导后不导没有w（1）
+		+ delta_t * 0.5*v(2)*K(1, 1) - delta_t * 0.5*v(1)*K(2, 1) + K(3, 1) +
+		delta_t * 0.5*w(2)*K(4, 1) - delta_t * 0.5*w(1)*K(5, 1)//前不导后导
+		- 0.5*delta_t*K(5, 1)*w(1);
+		//前导后不导
 	Jacobian(3, 2) = delta_t * 0.5*w(0)*K(4, 0)+ delta_t * 0.5*w(1)*K(4, 1)
 		+ delta_t * 0.5*v(0)*K(4, 3) + delta_t * 0.5*v(1)*K(4, 4) + delta_t * 0.5*v(2)*K(4, 5)
 		//0，1，3，4，5对w(2)求导
@@ -486,8 +532,8 @@ VectorXd DynamicFormula::Unconstr_Dyn(VectorXd epsilon_now, VectorXd epsilon_las
 		delta_t * 0.5*w(2)*K(3, 4) + K(4, 4) + delta_t * 0.5*w(0)*K(5, 4)//前不导后导
 		;
 	////前导后不导为0
-	Jacobian(4, 5) = -delta_t * 0.5*K(0, 0)*w(0) - delta_t * 0.5*K(0, 0)*w(1)
-		- delta_t * 0.5*K(0, 0)*w(2) - delta_t * 0.5*K(0, 0)*v(0) - delta_t * 0.5*K(0, 0)*v(1)
+	Jacobian(4, 5) = -delta_t * 0.5*K(0, 0)*w(0) - delta_t * 0.5*K(0, 1)*w(1)
+		- delta_t * 0.5*K(0, 2)*w(2) - delta_t * 0.5*K(0, 3)*v(0) - delta_t * 0.5*K(0, 4)*v(1)
 		//0，1，2，3，4对v(2)求导
 		- delta_t * 0.5*v(2)*K(0, 5) + delta_t * 0.5*v(0)*K(2, 5) -
 		delta_t * 0.5*w(2)*K(3, 5) + K(4, 5) + delta_t * 0.5*w(0)*K(5, 5)//前不导后导
@@ -534,6 +580,7 @@ VectorXd DynamicFormula::Unconstr_Dyn(VectorXd epsilon_now, VectorXd epsilon_las
 		delta_t * 0.5*w(1)*K(3, 5) - delta_t * 0.5*w(0)*K(4, 5) + K(5, 5);//前不导后导
 	//前导后不导为0
 	VectorXd delta_epsilion=Jacobian.inverse() * fepsilonk_est;
+//	cout << "fepsilonk_est" << fepsilonk_est<<endl;
 	//cout << "delta_epsilion是是是=" << delta_epsilion << endl;
 	/*VectorXd res(12);
 	res.block(0, 0, 6, 1) = epsilon_now - delta_epsilion;
@@ -559,23 +606,23 @@ void DynamicFormula::nextTime() {
 	//cout << "v:"<<v(0) << " " << v(1) << " " << v(2) << endl;
 	Vector3d tempy = g.block(0, 3, 3, 1);
 	Matrix3d Y = so3_ad(tempy);
-	VectorXd tf = tsfs2tf(Y);
+	VectorXd tf = computetgfg();
+		//tsfs2tf(Y);
 	VectorXd epsilon_last = epsilon;
 	//初始步骤
 	VectorXd delta_epsilon = delta_t * K.inverse()*(se3_ad(delta_t*epsilon_last)*K*epsilon_last + tf);
 	//VectorXd delta_epsilon = delta_t * K.inverse()*(computelp_());
 	VectorXd epsilon_now = epsilon_last + delta_epsilon;
-	cout << "epsilon_now 预估" << epsilon_now << endl;
+	//cout << "epsilon_now 预估" << epsilon_now << endl;
 	VectorXd res = se3_DEP(epsilon_now, epsilon_last, g);
 	//cout << "偏差res=" << res << endl;
 	//牛顿迭代法求解方程组
 	int i = 0;
-	double cancha =1e-13;
+	double cancha =1e-12;
 	do{//设置残差值
 		//epsilon_last是k-1,now是k
 		//执行后now是k+1,
-		epsilon_now =Unconstr_Dyn(epsilon_now, epsilon_last, g);
-		
+		epsilon_now =Unconstr_Dyn(epsilon_now, epsilon_last, g);		
 		//cout << "epsilon_now 迭代后的值" << epsilon_now << endl;
 		res = se3_DEP(epsilon_now, epsilon_last, g);
 		//cout << "偏差res=" << res << endl;
@@ -586,6 +633,16 @@ void DynamicFormula::nextTime() {
 		res(3) < -cancha || res(4) < -cancha || res(5) < -cancha
 		) && i < 400);
 	cout << "迭代了多少次？" << i << endl;
+	if (i == 400) {
+		cout << "400！！！！！" << endl;
+		cout << "400！！！！！" << endl;
+		cout << "400！！！！！" << endl;
+		cout << "400！！！！！" << endl;
+		cout << "400！！！！！" << endl;
+		cout << "400！！！！！" << endl;
+		cout << "400！！！！！" << endl;
+		cout << "400！！！！！" << endl;
+	}
 	cout << "偏差res=" << res << endl;	
 	Matrix4d se3cay= se3_cay(delta_t * epsilon_now);
 	//cout << "se3cay==" << se3cay << endl;
@@ -593,7 +650,7 @@ void DynamicFormula::nextTime() {
 	//cout << "g" << g << endl;
 	//重新计算R，然后赋值给g
 	//R = computeNextR(epsilon_now);
-	//g.block(0, 0, 3, 3)=R;
+	R = g.block(0, 0, 3, 3);
 	y = g.block(0, 3, 3, 1);
 	epsilon = epsilon_now;
 	cout << "角速度和速度是" << epsilon << endl;
@@ -608,6 +665,30 @@ void DynamicFormula::nextTime() {
 	//w = tempwv.block(0, 0, 3, 1);//w
 	//v = tempwv.block(3, 0, 3, 1);//v
 }
+/*
+void DynamicFormula::nextTime() {
+	Matrix3d zero;
+	zero.setZero();
+	MatrixXd RTRT(6, 6);
+	RTRT.setZero();
+	RTRT.block(0, 0, 3, 3) = R.transpose();
+	RTRT.block(0, 3, 3, 3) = zero;
+	RTRT.block(3, 0, 3, 3) = zero;
+	RTRT.block(3, 3, 3, 3) = R.transpose();
+	VectorXd lsps(6);
+	lsps= RTRT * lp;
+	VectorXd nextlsps=computeNextlsps(lsps);
+	VectorXd nextlp = RTRT * nextlsps;
+	VectorXd nextwv = K.inverse()*nextlp;
+	
+	w = nextwv.block(0, 0, 3, 1);
+	v = nextwv.block(3, 0, 3, 1);
+	Vector3d y_ = computey_();
+	y = computeNexty(y_);//y
+	R = computeNextR();//R
+	lp = nextlp;
+	cout << "nextwv" <<endl<< nextwv << endl;
+}*/
 void DynamicFormula::set_tsfs(Vector3d ts,Vector3d fs) {
 
 	//this->tsfs

@@ -22,7 +22,7 @@ int id = 0;
 long imagewidth = 600;
 long imageheight = 800;//从上往下看顺时针
 //myproplab yuanpan2
-string name = "H:\\MeshData\\tuoqiu1lab.obj";
+string name = "H:\\MeshData\\yuanpan2.obj";
 PIC *m_pic = new PIC();
 PICnew *m_picnew;
 void drawScene();
@@ -30,7 +30,7 @@ void drawScene();
 GLdouble windowWidth;
 GLdouble windowHeight;
 Vector3d omega(0, 10, 0);
-Vector3d velocity(0,0, 0);			
+Vector3d velocity(0,-9, 0);			
 Matrix3d R = Matrix3d::Identity();//设置为单位阵 在init()改不是单位阵
 Vector3d y(0,0,0);
 double m_fluidDensity = 0.98;
@@ -218,10 +218,14 @@ void init() {
 	//基尔霍夫张量
 	CKirchhoff m_K(m_picnew,m_bodyDensity,m_fluidDensity);
 	MatrixXd K = m_K.computeK();//初始时得到K矩阵
-	VectorXd m_tsfs = m_K.computetsfs();
-	cout << "tsfs" << m_tsfs << endl;
-	m_DF.tsfs = m_tsfs;
+	//VectorXd m_tsfs = m_K.computetsfs();
+	//cout << "tsfs" << m_tsfs << endl;
+	//m_DF.tsfs = m_tsfs;
+	double bodyMass = m_K.bodyMass;
+	double fluidMass = m_K.fluidMass;
+	Vector3d Cm = m_K.Cm;
 
+	//需要赋值
 	m_DF.q = R;
 	m_DF.setK(K);
 	m_DF.lp=	m_DF.computelp();//计算初始的lp
@@ -284,7 +288,8 @@ void drawScene()           //绘制
 	//cout << pData[1] << " " << pData[5] << " " << pData[9] << " " << pData[13] << endl;
 	//cout << pData[2] << " " << pData[6] << " " << pData[10] << " " << pData[14] << endl;
 	//cout << pData[3] << " " << pData[7] << " " << pData[11] <<" " << pData[15] << endl;
-	Vector3d y = m_DF.g.block(0, 3, 3, 1);
+	Vector3d y = m_DF.y;
+	//Vector3d y = m_DF.g.block(0, 3, 3, 1);
 	glTranslatef(y(0), y(1), y(2));
 	glMultMatrixf(pData);
 	//glRotated(m_DF.theta, m_DF.delta_q.x(), m_DF.delta_q.y(), m_DF.delta_q.z());

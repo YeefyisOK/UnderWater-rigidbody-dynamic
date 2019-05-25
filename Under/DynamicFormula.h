@@ -24,10 +24,12 @@ public:
 	//Matrix3d computeR_();
 	Vector3d computey_();
 	VectorXd computelp();
+	VectorXd computetgfg();
 	VectorXd computelp_();
-	Matrix3d computeNextR(VectorXd epsl);
+	Matrix3d computeNextR();//VectorXd epsl
 	Vector3d computeNexty(Vector3d y_);
 	VectorXd computeNextlp();
+	VectorXd computeNextlsps(VectorXd lsps);
 	VectorXd computeNextwv();
 	Vector3d vec62Vec31(VectorXd ab);
 	Vector3d vec62Vec32(VectorXd ab);
@@ -49,11 +51,14 @@ public:
 	Matrix3d R;//R初始化一个正交矩阵
 	Quaterniond q;//R转化四元数
 	Vector3d y;
-	VectorXd tsfs;
 	VectorXd lp;
 	VectorXd lp_;
 	Matrix4d g;
 	VectorXd epsilon;
+	VectorXd tsfs;
+	double bodyMass;
+	double fluidMass;
+	Vector3d Cm;
 
 	MatrixXd K;
 	double delta_t;

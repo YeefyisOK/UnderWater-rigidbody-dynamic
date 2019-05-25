@@ -20,11 +20,12 @@ public:
 	MatrixXd vertex ;//= MatrixXd::Random(3, 3)
 	MatrixXd normal ;//= MatrixXd::Random(3, 3)
 	MatrixXd face[3] ;
-	double bodyMass;//computeJ得到了mass
+	double bodyMass;//computeJ得到了mass物体质量
+	double fluidMass;//得到了流体质量
 	double bodyDensity;
 	double fluidDensity;
 	double volume;
-
+	Vector3d Cm;//质心，质量均匀分布
 	CKirchhoff(PICnew *
 		,double m_bodyDensity,double m_fluidDensity);
 	MatrixXd angular_vector();

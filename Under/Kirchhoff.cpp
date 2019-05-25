@@ -381,12 +381,14 @@ Matrix3d CKirchhoff::computeJ() {//之前单词打错了
 	}
 	volume = intg[0];
 	cout << "volume" << volume << endl;
+	fluidMass = intg[0]*fluidDensity;
 	for (int i = 0;i < 10;i++) {
 		intg[i] *=  bodyDensity;
 	}
 	bodyMass = intg[0];
 	// 质心
 	Vector3d cm(intg[1] / bodyMass, intg[2] / bodyMass, intg[3] / bodyMass);
+	Cm = cm;
 	// 相对于质心的惯性张量   0x 1y 2z
 	inertia(0, 0) = intg[5] + intg[6] - bodyMass *(cm(1)*cm(1) + cm(2)*cm(2));//yz 12
 	inertia(1, 1) = intg[4] + intg[6] - bodyMass *(cm(2)*cm(2) + cm(0)*cm(0));//zx 20
@@ -439,11 +441,12 @@ MatrixXd CKirchhoff::computeK(){
 	cout << "Kirchhoff:" << Kirchhoff << endl;
 	return Kirchhoff;
 }
+//不用在这里计算空间坐标的合外力和合外力矩
 VectorXd CKirchhoff::computetsfs() {
 	VectorXd tsfs(6);
 	Vector3d g(0, -9.8, 0);
 	Vector3d tg(0, 0, 0);//质量均匀分布
-	Vector3d fg(0, 0, 0);// =(bodyMass - volume*fluidDensity)*g;//
+	Vector3d fg(0, 0, 0);//=(bodyMass - volume*fluidDensity)*g;// 
 	tsfs.block(0, 0, 3, 1) = tg;
 	tsfs.block(3, 0, 3, 1) = fg;
 	return tsfs;
