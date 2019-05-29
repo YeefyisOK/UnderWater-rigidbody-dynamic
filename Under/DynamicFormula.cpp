@@ -42,10 +42,12 @@ VectorXd DynamicFormula::computetgfg() {
 	Vector3d temp = (fluidMass - bodyMass)*Cm;
 	Matrix3d tempchacheng = so3_ad(temp);
 	Vector3d tg = tempchacheng * g.block(0, 0, 3, 3).transpose()*gra_acc;
-	Vector3d fg = (fluidMass - bodyMass)*g.block(0, 0, 3, 3).transpose()*gra_acc;
+	Vector3d fg = (bodyMass - fluidMass)*g.block(0, 0, 3, 3).transpose()*gra_acc;
 	VectorXd res(6);
+	//cout << "tg" << tg << endl;
+	//cout << "fg" << fg << endl;
 	res.block(0, 0, 3, 1) = tg;
-	res.block(0, 3, 3, 1) = fg;
+	res.block(3, 0, 3, 1) = fg;
 	return res;
 }
 VectorXd DynamicFormula::tsfs2tf( Matrix3d Y) {
@@ -410,9 +412,9 @@ MatrixXd DynamicFormula::se3_ad(VectorXd tempepsilon) {
 }
 //求残差
 VectorXd DynamicFormula::se3_DEP(VectorXd epsilon_now, VectorXd epsilon_last, Matrix4d &gk) {
-	Vector3d tempy = gk.block(0, 3, 3, 1);			
-	Matrix3d Y = so3_ad(tempy);
-	VectorXd tf = computetgfg();
+	//Vector3d tempy = gk.block(0, 3, 3, 1);			
+	//Matrix3d Y = so3_ad(tempy);
+	//VectorXd tf = computetgfg();
 		// tsfs2tf(Y);
 	MatrixXd ctln1 = se3_Ctln(delta_t * epsilon_now);
 	MatrixXd ctln2 = se3_Ctln(-delta_t * epsilon_last);
@@ -422,8 +424,8 @@ VectorXd DynamicFormula::se3_DEP(VectorXd epsilon_now, VectorXd epsilon_last, Ma
 	tf.block(0, 0, 3, 1) = tempR.transpose()*tsfs.block(0, 0, 3, 1);
 	tf.block(0, 3, 3, 1) = tempR.transpose()*tsfs.block(0, 3, 3, 1);*/
 
-	return ctln1*K*epsilon_now -
-		ctln2*K*epsilon_last- delta_t* tf ;//
+	return ctln1 * K*epsilon_now -
+		ctln2 * K*epsilon_last- delta_t * computetgfg();//-delta_t * tf;//
 }
 
 VectorXd DynamicFormula::Unconstr_Dyn(VectorXd epsilon_now, VectorXd epsilon_last, Matrix4d &gk) {
@@ -579,7 +581,9 @@ VectorXd DynamicFormula::Unconstr_Dyn(VectorXd epsilon_now, VectorXd epsilon_las
 		delta_t * 0.5*v(1)*K(0, 5) - delta_t * 0.5*v(0)*K(1, 5) +
 		delta_t * 0.5*w(1)*K(3, 5) - delta_t * 0.5*w(0)*K(4, 5) + K(5, 5);//前不导后导
 	//前导后不导为0
+	cout << "fepsilonk_est" << fepsilonk_est << endl;
 	VectorXd delta_epsilion=Jacobian.inverse() * fepsilonk_est;
+//	cout << "Jacobian" << Jacobian << endl;
 //	cout << "fepsilonk_est" << fepsilonk_est<<endl;
 	//cout << "delta_epsilion是是是=" << delta_epsilion << endl;
 	/*VectorXd res(12);
@@ -607,31 +611,32 @@ void DynamicFormula::nextTime() {
 	Vector3d tempy = g.block(0, 3, 3, 1);
 	Matrix3d Y = so3_ad(tempy);
 	VectorXd tf = computetgfg();
+	//cout << "tf" << tf << endl;
 		//tsfs2tf(Y);
 	VectorXd epsilon_last = epsilon;
 	//初始步骤
 	VectorXd delta_epsilon = delta_t * K.inverse()*(se3_ad(delta_t*epsilon_last)*K*epsilon_last + tf);
 	//VectorXd delta_epsilon = delta_t * K.inverse()*(computelp_());
 	VectorXd epsilon_now = epsilon_last + delta_epsilon;
-	//cout << "epsilon_now 预估" << epsilon_now << endl;
+	cout << "epsilon_now 预估" << epsilon_now << endl;
 	VectorXd res = se3_DEP(epsilon_now, epsilon_last, g);
 	//cout << "偏差res=" << res << endl;
 	//牛顿迭代法求解方程组
 	int i = 0;
 	double cancha =1e-12;
-	do{//设置残差值
+	while ((res(0) > cancha || res(1) > cancha || res(2) > cancha ||
+		res(3) > cancha || res(4) > cancha || res(5) > cancha ||
+		res(0) < -cancha || res(1) < -cancha || res(2) < -cancha ||
+		res(3) < -cancha || res(4) < -cancha || res(5) < -cancha
+		) && i < 400){//设置残差值
 		//epsilon_last是k-1,now是k
 		//执行后now是k+1,
 		epsilon_now =Unconstr_Dyn(epsilon_now, epsilon_last, g);		
 		//cout << "epsilon_now 迭代后的值" << epsilon_now << endl;
 		res = se3_DEP(epsilon_now, epsilon_last, g);
-		//cout << "偏差res=" << res << endl;
 		i++;
-	} while ((res(0) > cancha || res(1) > cancha || res(2) > cancha ||
-		res(3) > cancha || res(4) > cancha || res(5) > cancha ||
-		res(0) < -cancha || res(1) < -cancha || res(2) < -cancha ||
-		res(3) < -cancha || res(4) < -cancha || res(5) < -cancha
-		) && i < 400);
+		//cout <<"迭代次数"<<i<<endl<<"epsilon_now"<< epsilon_now<< "偏差res=" << res <<endl;//
+	}
 	cout << "迭代了多少次？" << i << endl;
 	if (i == 400) {
 		cout << "400！！！！！" << endl;
@@ -642,11 +647,13 @@ void DynamicFormula::nextTime() {
 		cout << "400！！！！！" << endl;
 		cout << "400！！！！！" << endl;
 		cout << "400！！！！！" << endl;
+		cout << "400！！！！！" << endl;
 	}
-	cout << "偏差res=" << res << endl;	
+	//cout << "偏差res=" << res << endl;	
 	Matrix4d se3cay= se3_cay(delta_t * epsilon_now);
 	//cout << "se3cay==" << se3cay << endl;
 	g= g * se3cay;
+	cout << "g" << g << endl;
 	//cout << "g" << g << endl;
 	//重新计算R，然后赋值给g
 	//R = computeNextR(epsilon_now);
@@ -657,9 +664,8 @@ void DynamicFormula::nextTime() {
 	//Vector3d y_ = computey_();
 	//cout << "y_" << y_ << endl;
 	//y=computeNexty(y_);//y
-	cout << "y!!!!!!!!!!!!!!:" << y << endl;
 	//R=computeNextR();//R
-	cout << "R:" << R << endl;
+	//cout << "R:" << R << endl;
 	//cout << "w:" << epsilon.block(0, 0, 3, 1) << endl;
 	//cout << "v:" << epsilon.block(3, 0, 3, 1) << endl;
 	//w = tempwv.block(0, 0, 3, 1);//w

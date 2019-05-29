@@ -22,15 +22,15 @@ int id = 0;
 long imagewidth = 600;
 long imageheight = 800;//从上往下看顺时针
 //myproplab yuanpan2
-string name = "H:\\MeshData\\yuanpan2.obj";
+string name = "H:\\MeshData\\ell3.obj";
 PIC *m_pic = new PIC();
 PICnew *m_picnew;
 void drawScene();
 //窗口的大小
 GLdouble windowWidth;
 GLdouble windowHeight;
-Vector3d omega(0, 10, 0);
-Vector3d velocity(0,-9, 0);			
+Vector3d omega(0, 0, 0);
+Vector3d velocity(0,0, 0);			
 Matrix3d R = Matrix3d::Identity();//设置为单位阵 在init()改不是单位阵
 Vector3d y(0,0,0);
 double m_fluidDensity = 0.98;
@@ -223,6 +223,8 @@ void init() {
 	//m_DF.tsfs = m_tsfs;
 	double bodyMass = m_K.bodyMass;
 	double fluidMass = m_K.fluidMass;
+	m_DF.fluidMass = fluidMass;
+	m_DF.bodyMass = bodyMass;
 	Vector3d Cm = m_K.Cm;
 
 	//需要赋值
