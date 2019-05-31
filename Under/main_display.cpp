@@ -22,7 +22,7 @@ int id = 0;
 long imagewidth = 600;
 long imageheight = 800;//从上往下看顺时针
 //myproplab yuanpan2
-string name = "H:\\MeshData\\ell3.obj";
+string name = "H:\\MeshData\\bunnysmall.obj";
 PIC *m_pic = new PIC();
 PICnew *m_picnew;
 void drawScene();

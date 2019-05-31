@@ -581,7 +581,7 @@ VectorXd DynamicFormula::Unconstr_Dyn(VectorXd epsilon_now, VectorXd epsilon_las
 		delta_t * 0.5*v(1)*K(0, 5) - delta_t * 0.5*v(0)*K(1, 5) +
 		delta_t * 0.5*w(1)*K(3, 5) - delta_t * 0.5*w(0)*K(4, 5) + K(5, 5);//前不导后导
 	//前导后不导为0
-	cout << "fepsilonk_est" << fepsilonk_est << endl;
+	//cout << "fepsilonk_est" << fepsilonk_est << endl;
 	VectorXd delta_epsilion=Jacobian.inverse() * fepsilonk_est;
 //	cout << "Jacobian" << Jacobian << endl;
 //	cout << "fepsilonk_est" << fepsilonk_est<<endl;
@@ -611,6 +611,7 @@ void DynamicFormula::nextTime() {
 	Vector3d tempy = g.block(0, 3, 3, 1);
 	Matrix3d Y = so3_ad(tempy);
 	VectorXd tf = computetgfg();
+	cout << "tf"<<tf << endl;
 	//cout << "tf" << tf << endl;
 		//tsfs2tf(Y);
 	VectorXd epsilon_last = epsilon;
@@ -624,6 +625,7 @@ void DynamicFormula::nextTime() {
 	//牛顿迭代法求解方程组
 	int i = 0;
 	double cancha =1e-12;
+	
 	while ((res(0) > cancha || res(1) > cancha || res(2) > cancha ||
 		res(3) > cancha || res(4) > cancha || res(5) > cancha ||
 		res(0) < -cancha || res(1) < -cancha || res(2) < -cancha ||
