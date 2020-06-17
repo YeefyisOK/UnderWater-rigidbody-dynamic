@@ -9,5 +9,6 @@ opengl
 
 Eigen 3.1.8
 
-理论及运行结果：Readme.pptx
+理论及运行结果详见：Readme.pptx
 
+![ppt中的运行结果disk页](https://github.com/YeefyisOK/UnderWater-rigidbody-dynamic/blob/master/image-folder/disk-simulation.jpg)
