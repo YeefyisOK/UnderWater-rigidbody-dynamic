@@ -5,7 +5,7 @@
 
 Visual Studio 2017
 
-opengl
+OpenGL
 
 Eigen 3.1.8
 
